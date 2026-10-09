@@ -226,6 +226,14 @@ async def initiate_payment(body: PaymentIn):
     return result
 
 
+@app.post("/api/sessions/{session_id}/prewarm")
+async def prewarm_session(session_id: str, amount_inr: float):
+    """Pre-generate Rakshak's voice for an amount (called when the pay screen opens) so the barge-in is instant."""
+    s = registry.get_or_create(session_id)
+    asyncio.create_task(payment_mod.prewarm_for(s, amount_inr))
+    return {"ok": True}
+
+
 class OverrideIn(BaseModel):
     reason: str = "customer confirmed they know the payee"
 

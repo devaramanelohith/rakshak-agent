@@ -34,7 +34,9 @@ function onEvent(ev) {
     case 'agent_running': $('payStatus').innerHTML = '<span class="spinner"></span>Rakshak is checking the payee and the call…'; break;
     case 'decision': onDecision(ev); break;
     case 'case_update': if (S.case && ev.case.case_id === S.case.case_id) S.case = ev.case; break;
-    case 'replay_paused': case 'replay_finished': S.replayPayment = ev.payment_attempt; if (S.replayPayment) toast('Scripted caller is demanding payment — tap "Open UPI pay"'); log('replay reached payment demand'); break;
+    case 'replay_paused': case 'replay_finished': S.replayPayment = ev.payment_attempt; log('replay reached payment demand');
+      if (S.replayPayment) { if ($('view-pay').classList.contains('active') && !$('vpaInp').value) { $('vpaInp').value = S.replayPayment.vpa; $('payeeNameInp').value = S.replayPayment.payee_name || ''; $('amountInp').value = S.replayPayment.amount_inr; toast('Payee filled in from the call'); } else { toast('Scripted caller is demanding payment: tap "Open UPI pay"'); } }
+      break;
     case 'replay_marker': log('script marker: ' + ev.marker); break;
     case 'party_joined': log('party joined: ' + ev.role); break;
     case 'call_ended': stopCallUI(); break;
@@ -88,7 +90,10 @@ function openPay() {
   const p = S.replayPayment; if (p) { $('vpaInp').value = p.vpa; $('payeeNameInp').value = p.payee_name || ''; $('amountInp').value = p.amount_inr; }
   $('payCallNote').textContent = S.lastRubric ? `Call in progress · current scam risk ${Math.round(S.lastRubric.risk_score * 100)}%` : 'Call in progress';
   $('payStatus').textContent = '';
+  prewarmAmount();
 }
+let _pwLast = null;
+function prewarmAmount() { const a = Number($('amountInp').value); if (!a || a === _pwLast) return; _pwLast = a; fetch(`/api/sessions/${S.sid}/prewarm?amount_inr=${a}`, { method: 'POST' }).catch(() => {}); }
 async function sendPayment() {
   const vpa = $('vpaInp').value.trim(), name = $('payeeNameInp').value.trim(), amount = Number($('amountInp').value);
   if (!vpa || !amount) return toast('Enter payee and amount');
@@ -152,6 +157,7 @@ $('btnMic').onclick = toggleMic;
 $('btnReplay').onclick = async () => { S.caller.ensure(); S.guardian.ensure(); connectCallWS(); const id = $('scriptSel').value; await api(`/api/sessions/${S.sid}/replay`, 'POST', { script_id: id, voice: true, pace: 1.0, stop_at_marker: 'payment_demand' }); log('auto-playing script ' + id); };
 $('btnOpenPay').onclick = openPay;
 $('btnBackCall').onclick = () => show('call');
+$('amountInp').onchange = prewarmAmount;
 $('btnEndCall').onclick = endCall;
 $('btnSend').onclick = sendPayment;
 $('btnCancelPay').onclick = cancelPayment;

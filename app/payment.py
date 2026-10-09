@@ -18,7 +18,7 @@ from .agents.pipeline import new_case_id, run_payment_guardian
 from .alerts import notify_trusted_contact
 from .analysis import Rubric, format_turns
 from .config import settings
-from .intervention import compose, tts_pcm16
+from .intervention import compose, prewarm_amount, tts_pcm16
 from .narrative import generate_case_narrative
 from .payee_risk import lookup_payee
 from .policy import fuse
@@ -35,7 +35,7 @@ def public_case(case: dict) -> dict:
 
 async def _speak(text: str) -> str | None:
     try:
-        pcm = await asyncio.wait_for(tts_pcm16(text), timeout=12)
+        pcm = await asyncio.wait_for(tts_pcm16(text), timeout=20)
         return base64.b64encode(pcm).decode() if pcm else None
     except Exception as e:  # pragma: no cover
         log.warning("TTS failed: %s", e)
@@ -81,13 +81,25 @@ async def evaluate_payment(session, vpa: str, payee_name: str, amount_inr: float
     session.case_ids.append(case["case_id"])
 
     # --- execute immediately -----------------------------------------------------------------
-    audio_b64 = await _speak(scripted) if fusion.action != "proceed" and scripted else None
     if fusion.action == "hold_and_alert":
         alert = await notify_trusted_contact(case, profile)
         case["alert"] = alert
         case["timeline"].append({"t": time.time(), "event": "trusted_contact_notified", "channels": alert["channels"]})
         store().put_case(case)
-    await session.broadcast({"type": "decision", "case": public_case(case), "audio_b64": audio_b64, "audio_rate": 16000, "spoken_text": scripted, "lang": lang})
+    # The screen must change before the voice: broadcast now, voice as soon as TTS is ready (instant when prewarmed).
+    await session.broadcast({"type": "decision", "case": public_case(case), "audio_b64": None, "audio_rate": 16000, "spoken_text": scripted, "lang": lang})
+    audio_b64 = None
+    if fusion.action != "proceed" and scripted:
+        try:
+            audio_b64 = await asyncio.wait_for(_speak(scripted), timeout=1.5)  # cache hit -> inline in the response
+        except asyncio.TimeoutError:
+            async def _voice_later():
+                b64 = await _speak(scripted)
+                if b64:
+                    await session.send_private_audio("user", b64, scripted, kind="rakshak")
+            asyncio.create_task(_voice_later())
+        else:
+            await session.send_private_audio("user", audio_b64, scripted, kind="rakshak")
 
     # --- agent path ------------------------------------------------------------------------------
     if case["decision"]["agent_status"] == "pending":
@@ -205,3 +217,12 @@ def expire_holds() -> list[str]:
             store().put_case(case)
             released.append(case["case_id"])
     return released
+
+
+async def prewarm_for(session, amount_inr: float) -> int:
+    """Generate the hold/warn audio for this customer and amount ahead of the payment moment."""
+    try:
+        return await prewarm_amount(store().get_profile(session.user_id), amount_inr)
+    except Exception as e:  # pragma: no cover
+        log.warning("prewarm failed: %s", e)
+        return 0

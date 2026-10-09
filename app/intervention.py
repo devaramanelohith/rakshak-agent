@@ -105,6 +105,16 @@ async def tts_pcm16(text: str, voice: str | None = None, rate: int = 16000) -> b
     return pcm
 
 
+async def prewarm_amount(profile: dict, amount_inr: float) -> int:
+    n = 0
+    for action in ("hold_and_alert", "warn"):
+        _, text = compose(action, profile, amount_inr, settings.hold_minutes)
+        if text:
+            await tts_pcm16(text)
+            n += 1
+    return n
+
+
 async def prewarm(profiles: list[dict], amounts: list[float] = (200000, 50000)) -> int:
     """Pre-generate the hold/warn/whisper audio for the demo profiles so the barge-in has zero latency."""
     n = 0

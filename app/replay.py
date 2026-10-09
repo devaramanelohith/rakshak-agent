@@ -78,4 +78,9 @@ async def _run(session, script: dict, voice: bool, pace: float, stop_at_marker: 
 
 def start_replay(session, script: dict, voice: bool = True, pace: float = 1.0, stop_at_marker: str | None = "payment_demand") -> None:
     stop_replay(session.id)
+    pay = script.get("payment_attempt")
+    if pay and settings.llm_enabled():
+        from .payment import prewarm_for  # late import to avoid a cycle
+
+        asyncio.create_task(prewarm_for(session, float(pay["amount_inr"])))
     _running[session.id] = asyncio.create_task(_run(session, script, voice, pace, stop_at_marker))
