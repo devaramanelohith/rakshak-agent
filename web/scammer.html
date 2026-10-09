@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Rakshak · caller console</title><link rel="stylesheet" href="/static/styles.css"></head>
+<body>
+<div class="stage">
+  <div class="side">
+    <div class="card"><h1 style="margin:0">Caller console</h1><div class="muted">You play the scammer (or a legitimate caller). Join the victim's session, then either speak into your mic or click lines from a script; the victim's phone hears your voice and Rakshak transcribes it.</div></div>
+    <div class="card"><label>Session id</label><div class="row"><input id="sidInp" placeholder="from the victim phone"><button class="btn" id="btnJoin" style="width:140px">Join</button></div>
+      <div class="row"><button class="btn secondary" id="btnMic">Start my mic</button><button class="btn ghost" id="btnHangup">Hang up</button></div>
+      <div class="muted" id="status">not connected</div></div>
+    <div class="card"><label>Say something as the caller (typed)</label><div class="row"><input id="sayInp" placeholder="Type a line…"><button class="btn" id="btnSay" style="width:120px">Say (TTS)</button></div><label><input type="checkbox" id="voiceChk" checked style="width:auto;margin-right:6px">Voice the line on the victim's phone</label></div>
+    <div class="card"><h3>Live risk on the victim's phone</h3><div class="meter"><div id="riskBar"></div></div><div id="riskText" class="muted">0%</div><div class="transcript" id="transcript" style="max-height:140px"></div></div>
+  </div>
+  <div class="side">
+    <div class="card"><label>Script</label><select id="scriptSel"></select>
+      <div class="row"><button class="btn" id="btnAuto">Auto-play whole script</button><button class="btn ghost" id="btnStop">Stop</button></div>
+      <div class="muted" id="scriptMeta"></div></div>
+    <div class="card lines" id="lines"></div>
+  </div>
+</div>
+<script src="/static/common.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const C = { sid: null, ws: null, ev: null, mic: null, player: new Player(), script: null };
+function status(t) { $('status').textContent = t; }
+async function loadScripts() {
+  const list = await api('/api/scripts');
+  $('scriptSel').innerHTML = list.map(s => `<option value="${s.id}">${esc(s.title)} · ${s.language} · ${s.expected_outcome}</option>`).join('');
+  $('scriptSel').onchange = loadScript; if (list.length) await loadScript();
+}
+async function loadScript() {
+  C.script = await api('/api/scripts/' + $('scriptSel').value);
+  const p = C.script.payment_attempt; $('scriptMeta').textContent = `${C.script.scam_type || 'benign'} · ${C.script.duration_sec}s · payment: ${p ? p.vpa + ' ' + fmtINR(p.amount_inr) : 'none'} · ${C.script.stage_directions || ''}`;
+  $('lines').innerHTML = C.script.lines.map(l => `<div class="line ${l.speaker}"><span class="n">${l.n}</span><div><div>${esc(l.text)}</div>${l.text_en && l.text_en !== l.text ? `<div class="muted">${esc(l.text_en)}</div>` : ''}</div>${l.marker ? `<span class="pill bad mk">${l.marker}</span>` : ''}${l.speaker === 'caller' ? `<button data-n="${l.n}">Say</button>` : `<button data-n="${l.n}" class="u">User says</button>`}</div>`).join('');
+  $('lines').querySelectorAll('button').forEach(b => b.onclick = () => sayLine(Number(b.dataset.n)));
+}
+async function sayLine(n) { const l = C.script.lines.find(x => x.n === n); if (!C.sid) return status('join a session first'); await api(`/api/sessions/${C.sid}/say`, 'POST', { text: l.text, speaker: l.speaker, voice: $('voiceChk').checked }); }
+function join() {
+  C.sid = $('sidInp').value.trim(); if (!C.sid) return;
+  C.player.ensure();
+  if (C.ev) C.ev.close();
+  C.ev = openWS(`/ws/events/${C.sid}`, { onJson: (e) => {
+    if (e.type === 'transcript') { const d = document.createElement('div'); d.className = 't ' + e.turn.speaker; d.textContent = `${e.turn.speaker}: ${e.turn.text}`; $('transcript').appendChild(d); $('transcript').scrollTop = 1e9; }
+    if (e.type === 'risk_update') { const r = e.rubric; $('riskBar').style.width = Math.round(r.risk_score * 100) + '%'; $('riskBar').style.background = riskColor(r.risk_score); $('riskText').textContent = `${Math.round(r.risk_score * 100)}% · ${r.stage} · ${r.scam_type}`; }
+    if (e.type === 'decision') status(`Rakshak decided: ${e.case.decision.action}`);
+    if (e.type === 'whisper') status('Rakshak whispered to the victim');
+  }});
+  C.ws = openWS(`/ws/call/${C.sid}/caller`, { onBinary: (buf) => C.player.play(new Int16Array(buf), 16000), onOpen: () => status('connected to session ' + C.sid + ' as caller'), onClose: () => status('disconnected') });
+}
+async function mic() {
+  if (C.mic) { C.mic.stop(); C.mic = null; $('btnMic').textContent = 'Start my mic'; return; }
+  C.mic = new Mic((i16) => { if (C.ws && C.ws.readyState === 1) C.ws.send(i16.buffer); }); await C.mic.start(); $('btnMic').textContent = 'Stop my mic'; status('mic streaming to victim + transcriber');
+}
+$('btnJoin').onclick = join; $('btnMic').onclick = mic;
+$('btnHangup').onclick = () => { if (C.ws) C.ws.send(JSON.stringify({ type: 'end_call' })); if (C.mic) { C.mic.stop(); C.mic = null; } };
+$('btnSay').onclick = async () => { if (!C.sid) return status('join first'); await api(`/api/sessions/${C.sid}/say`, 'POST', { text: $('sayInp').value, speaker: 'caller', voice: $('voiceChk').checked }); $('sayInp').value = ''; };
+$('btnAuto').onclick = async () => { if (!C.sid) return status('join first'); await api(`/api/sessions/${C.sid}/replay`, 'POST', { script_id: $('scriptSel').value, voice: $('voiceChk').checked, pace: 1.0, stop_at_marker: 'payment_demand' }); status('auto-playing; stops at the payment demand'); };
+$('btnStop').onclick = async () => { if (C.sid) await api(`/api/sessions/${C.sid}/replay/stop`, 'POST'); };
+if (qs('session')) { $('sidInp').value = qs('session'); }
+loadScripts().then(() => { if (qs('session')) join(); });
+</script>
+</body></html>

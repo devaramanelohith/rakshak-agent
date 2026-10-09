@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Rakshak · fraud desk</title><link rel="stylesheet" href="/static/styles.css"></head>
+<body>
+<div class="desk">
+  <div class="list">
+    <div class="card"><h1 style="margin:0">Fraud desk</h1><div class="muted">Every intervention is a case with the call rubric, payee evidence, the agent trace and an auto-drafted 1930 referral.</div></div>
+    <div class="card"><h3>Live sessions</h3><div id="live" class="muted">none</div></div>
+    <div id="cases"></div>
+  </div>
+  <div id="detail"><div class="card muted">Select a case.</div></div>
+</div>
+<script src="/static/common.js"></script>
+<script>
+const $ = (id) => document.getElementById(id); let CASES = [], SEL = null; const LIVE = {};
+const badge = (s) => ({ on_hold: 'bad', overridden_by_user: 'warn', cancelled_by_user: 'on', approved: 'on', warned: 'warn', hold_expired: 'warn' }[s] || '');
+async function refresh() { CASES = await api('/api/cases'); renderList(); if (SEL) renderDetail(CASES.find(c => c.case_id === SEL) || null); }
+function renderList() { $('cases').innerHTML = CASES.map(c => `<div class="card ${c.case_id === SEL ? 'sel' : ''}" data-id="${c.case_id}"><div class="row" style="justify-content:space-between"><b>${fmtINR(c.payment.amount_inr)} → ${esc(c.payment.vpa)}</b><span class="pill ${badge(c.status)}">${c.status}</span></div><div class="muted">${new Date(c.created_at * 1000).toLocaleString()} · ${c.profile.name} · ${c.rubric.scam_type} · risk ${c.rubric.risk_score} · ${c.decision.action} (${c.decision.decided_by})</div></div>`).join('') || '<div class="card muted">No cases yet.</div>'; $('cases').querySelectorAll('.card').forEach(el => el.onclick = () => { SEL = el.dataset.id; renderList(); renderDetail(CASES.find(c => c.case_id === SEL)); }); }
+function kv(obj, keys) { return `<div class="kv">${keys.filter(k => obj[k] !== undefined).map(k => `<span class="muted">${k.replace(/_/g, ' ')}</span><span>${Array.isArray(obj[k]) ? esc(obj[k].join('; ')) : esc(obj[k])}</span>`).join('')}</div>`; }
+function renderDetail(c) {
+  if (!c) { $('detail').innerHTML = '<div class="card muted">Case not found.</div>'; return; }
+  const sig = Object.entries(c.rubric.signals || {}).filter(([, v]) => v).map(([k]) => `<span>${k.replace(/_/g, ' ')}</span>`).join('') || '<span style="background:rgba(48,164,108,.18);color:#9be0bd">no coercion signals</span>';
+  const trace = (c.trace || []).map(e => `<div class="ev ${e.type}"><b>${esc(e.agent || '')}</b> · ${e.type}${e.name ? ' · ' + esc(e.name) : ''}${e.args ? '<br><code>' + esc(JSON.stringify(e.args)).slice(0, 400) + '</code>' : ''}${e.result ? '<br><code>' + esc(JSON.stringify(e.result)).slice(0, 500) + '</code>' : ''}${e.text ? '<br>' + esc(e.text) : ''}</div>`).join('') || '<div class="muted">No agent trace (policy path).</div>';
+  const n = c.narrative;
+  $('detail').innerHTML = `
+    <div class="card"><div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">${c.case_id}</h2><span class="pill ${badge(c.status)}">${c.status}</span></div>
+      <div class="muted">${c.profile.name} (${c.profile.age_band}, ${c.profile.language}) · session ${c.session_id} · ${new Date(c.created_at * 1000).toLocaleString()}</div></div>
+    <div class="compare">
+      <div class="card"><h3>Decision</h3>${kv(c.decision, ['action', 'confidence', 'decided_by', 'hold_minutes', 'notify_trusted_contact', 'latency_ms'])}<ul class="reasons">${(c.decision.reasons || []).map(r => `<li>${esc(r)}</li>`).join('')}</ul><div class="spoken">${esc(c.decision.user_message || '')}</div></div>
+      <div class="card"><h3>Deterministic policy (safety net)</h3>${kv(c.policy || {}, ['score', 'action', 'call_risk', 'payee_risk'])}<ul class="reasons">${((c.policy || {}).reasons || []).map(r => `<li>${esc(r)}</li>`).join('')}</ul></div>
+    </div>
+    <div class="compare">
+      <div class="card"><h3>Call rubric</h3>${kv(c.rubric, ['scam_type', 'stage', 'risk_score', 'language', 'latency_ms', 'source'])}<div class="chips">${sig}</div><div class="muted" style="margin-top:6px">${esc(c.rubric.summary || '')}</div></div>
+      <div class="card"><h3>Payee evidence</h3>${kv(c.payee, ['vpa', 'risk_band', 'mule_risk_score', 'account_age_days', 'fan_in_48h', 'fan_out_48h', 'cash_out_ratio_7d', 'dormant_days_before_burst', 'fri_level', 'linked_complaints_1930', 'kyc_tier', 'source'])}<ul class="reasons">${(c.payee.reasons || []).map(r => `<li>${esc(r)}</li>`).join('')}</ul></div>
+    </div>
+    <div class="card"><h3>Agent trace (ADK)</h3><div class="trace">${trace}</div></div>
+    <div class="card"><h3>Fraud-desk record ${n ? '' : '<span class="spinner"></span>'}</h3>${n ? `<p>${esc(n.narrative)}</p><h3>1930 / ASCom referral</h3><div class="spoken">${esc(n.referral_text)}</div><h3>Evidence</h3><ul class="reasons">${(n.evidence_points || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul><h3>Recommended bank actions</h3><ul class="reasons">${(n.recommended_bank_actions || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul><h3>Customer follow-up</h3><div class="spoken">${esc(n.customer_followup_user_language)}</div>` : '<div class="muted">Generating…</div>'}</div>
+    <div class="compare">
+      <div class="card"><h3>What an SMS alert would have done</h3><div class="bad">"Dear customer, ₹${Number(c.payment.amount_inr).toLocaleString('en-IN')} debited to ${esc(c.payment.vpa)}."</div><div class="muted">Sent after the money left. Recovery in India averages ~24%; the mule account is usually empty within hours.</div></div>
+      <div class="card"><h3>What Rakshak did</h3><div class="good">${c.decision.action.replace(/_/g, ' ')} · spoke to the customer in ${c.profile.language} · ${c.alert ? 'alerted ' + esc(c.alert.contact_name) : 'no alert'} · case + referral drafted</div><div class="muted">Timeline: ${(c.timeline || []).map(t => `${new Date(t.t * 1000).toLocaleTimeString()} ${t.event}`).join(' → ')}</div></div>
+    </div>
+    <div class="card"><h3>Transcript excerpt</h3><div class="transcript" style="max-height:260px">${esc(c.transcript_excerpt || '').split('\n').map(l => `<div class="t ${l.startsWith('caller') ? 'caller' : 'user'}">${esc(l)}</div>`).join('')}</div></div>`;
+}
+function renderLive() { const rows = Object.values(LIVE); $('live').innerHTML = rows.length ? rows.map(s => `<div><b>${s.session_id}</b> · risk <span style="color:${riskColor(s.risk || 0)}">${Math.round((s.risk || 0) * 100)}%</span> · ${s.stage || ''} · ${s.turns || 0} turns</div>`).join('') : 'none'; }
+openWS('/ws/events/all', { onJson: (e) => {
+  if (e.type === 'hello') { (e.sessions || []).forEach(s => LIVE[s.session_id] = { session_id: s.session_id, risk: s.rubric ? s.rubric.risk_score : 0, stage: s.rubric ? s.rubric.stage : '', turns: s.turns }); renderLive(); }
+  if (e.type === 'risk_update') { LIVE[e.session_id] = { ...(LIVE[e.session_id] || {}), session_id: e.session_id, risk: e.rubric.risk_score, stage: e.rubric.stage }; renderLive(); }
+  if (e.type === 'transcript') { LIVE[e.session_id] = { ...(LIVE[e.session_id] || { session_id: e.session_id }), turns: ((LIVE[e.session_id] || {}).turns || 0) + 1 }; renderLive(); }
+  if (e.type === 'decision' || e.type === 'case_update') { SEL = SEL || e.case.case_id; refresh(); }
+}});
+refresh(); setInterval(refresh, 8000);
+</script>
+</body></html>

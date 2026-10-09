@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SafePay · Rakshak guardian demo</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div class="stage">
+  <div class="phone"><div class="screen">
+    <div class="topbar"><span id="clock">09:41</span><span><span id="guardianPill" class="pill on">Rakshak ON</span></span></div>
+
+    <!-- HOME -->
+    <section id="view-home" class="view active">
+      <h1>SafePay</h1>
+      <div class="muted" id="homeName">Namaste</div>
+      <div class="card"><div class="muted">Savings account</div><div class="balance">₹4,82,310</div></div>
+      <button class="btn" id="btnPay">Pay via UPI</button>
+      <button class="btn secondary" id="btnIncoming">Simulate incoming call</button>
+      <h3>Guardian profile</h3>
+      <div class="card">
+        <label>Demo customer</label>
+        <select id="userSel"><option value="demo-user">Sunita Rao · 60+ · Hindi · trusted: Priya (daughter)</option><option value="demo-user-en">Daniel Tan · 25-39 · Singapore English · trusted: Mei (spouse)</option></select>
+        <label>Language for Rakshak's voice</label>
+        <select id="langSel"><option value="hi">Hindi</option><option value="hinglish">Hinglish</option><option value="en">English</option><option value="en-sg">English (Singapore)</option><option value="kn">Kannada</option><option value="ta">Tamil</option></select>
+        <label>Trusted contact</label><input id="contactInp" placeholder="Priya (daughter)">
+        <label><input type="checkbox" id="guardianChk" checked style="width:auto;margin-right:6px">Guardian mode (opt-in: Rakshak listens to calls on this device)</label>
+        <button class="btn ghost" id="btnSaveProfile">Save profile</button>
+      </div>
+      <h3>Session</h3>
+      <div class="card"><div class="muted">Session id <b id="sidText">…</b></div><div class="muted">Scammer console: <a id="scammerLink" target="_blank">open</a> · Fraud desk: <a href="/desk" target="_blank">open</a></div></div>
+    </section>
+
+    <!-- CALL -->
+    <section id="view-call" class="view">
+      <div class="caller"><div class="muted">Incoming call</div><div class="num" id="callerNum">+91 98765 00301</div><div class="timer" id="callTimer">00:00</div></div>
+      <div class="row"><span class="pill live" id="listenPill">Rakshak listening</span><span class="pill" id="micPill">mic off</span></div>
+      <div class="banner" id="whisperBanner"></div>
+      <h3>Scam risk <span id="riskPct" style="float:right;color:#fff">0%</span></h3>
+      <div class="meter"><div id="riskBar"></div></div>
+      <div class="chips" id="signalChips"></div>
+      <ul class="reasons" id="reasons"></ul>
+      <h3>Live transcript</h3>
+      <div class="card transcript" id="transcript"><div class="muted">Waiting for speech…</div></div>
+      <div class="card">
+        <label>Play a scripted caller (for the demo)</label>
+        <select id="scriptSel"></select>
+        <div class="row"><button class="btn secondary" id="btnReplay">Auto-play script</button><button class="btn ghost" id="btnMic">Use my mic</button></div>
+      </div>
+      <div class="row"><button class="btn" id="btnOpenPay">Open UPI pay</button><button class="btn danger" id="btnEndCall">End call</button></div>
+    </section>
+
+    <!-- PAY -->
+    <section id="view-pay" class="view">
+      <h1>Send money</h1>
+      <div class="muted" id="payCallNote"></div>
+      <label>Payee UPI ID</label><input id="vpaInp" placeholder="name@bank">
+      <label>Payee name</label><input id="payeeNameInp" placeholder="as shown by UPI">
+      <label>Amount (₹)</label><input id="amountInp" type="number" placeholder="0">
+      <button class="btn" id="btnSend">Pay</button>
+      <button class="btn ghost" id="btnBackCall">Back to call</button>
+      <div id="payStatus" class="muted"></div>
+    </section>
+
+    <!-- HOLD / WARN -->
+    <section id="view-hold" class="view">
+      <div class="hold-head" id="holdHead"><div class="muted" style="color:#ffe">Rakshak</div><div class="big" id="holdTitle">Payment paused</div><div class="countdown" id="countdown">30:00</div><div id="holdSub" style="font-size:13px"></div></div>
+      <div class="spoken" id="spokenText"></div>
+      <h3>Why</h3><ul class="reasons" id="holdReasons"></ul>
+      <h3>Payee check</h3>
+      <div class="card kv" id="payeeCard"></div>
+      <div class="card" id="alertLine" style="display:none"></div>
+      <button class="btn ok" id="btnCancelPay">Cancel payment &amp; report</button>
+      <button class="btn secondary" id="btnTalk">Talk to Rakshak (voice)</button>
+      <button class="btn ghost" id="btnOverride">I know this person — pay anyway</button>
+      <div class="card" id="talkBox" style="display:none"><div class="muted">Rakshak conversation</div><div id="talkLog" class="transcript"></div><button class="btn ghost" id="btnTalkEnd">End conversation</button></div>
+    </section>
+
+    <!-- DONE -->
+    <section id="view-done" class="view">
+      <h1 id="doneTitle">Done</h1>
+      <div class="card" id="doneBody"></div>
+      <button class="btn" id="btnHome">Back to home</button>
+    </section>
+
+    <div class="toast" id="toast"></div>
+    <div class="modal" id="confirmModal"><div class="card">
+      <h2>Are you sure?</h2>
+      <div class="muted" id="confirmText"></div>
+      <label>Type the amount to confirm</label><input id="confirmAmount" placeholder="e.g. 200000">
+      <div class="row"><button class="btn ghost" id="btnConfirmNo">Go back</button><button class="btn danger" id="btnConfirmYes">Pay anyway</button></div>
+    </div></div>
+  </div></div>
+
+  <div class="side">
+    <div class="card"><b>Rakshak — scam-moment interception</b><div class="muted">This phone is the customer's bank app. Join as the scammer from <a id="scammerLink2" target="_blank">/scammer</a> (another device or tab), or auto-play a script. The payment screen is where Rakshak acts.</div></div>
+    <div class="card"><h3>Event log</h3><div class="log" id="log"></div></div>
+  </div>
+</div>
+<script src="/static/common.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
