@@ -50,7 +50,7 @@ Quota note: a free AI Studio key has small daily request caps on the 3.x models 
 
 ## 3b. Alternative: Vertex AI / Agent Platform endpoints with the $300 trial
 
-The $300 trial credit applies to Vertex AI usage, not to AI Studio keys. With `GOOGLE_GENAI_USE_VERTEXAI=true` the rubric, TTS, ADK agents, Search grounding and narrative use Vertex AI through the runtime service account (`config.llm_enabled()` is true without a key). The two Live API models (`gemini-3.5-transcribe-live` for transcription and `gemini-3.8-live` for the post-hold conversation) are published under those ids on the Gemini API, so `app/llm.py` `live_client()` keeps using the AI Studio key for them unless `RAKSHAK_LIVE_VIA_VERTEX=1` is set, which has not been exercised. Keep the secret mounted in this mode; `/healthz` reports `live: false` when neither is available and audio transcription is then disabled (the transcript-driven path still works).
+The $300 trial credit applies to Vertex AI usage, not to AI Studio keys. With `GOOGLE_GENAI_USE_VERTEXAI=true` the rubric, TTS, ADK agents, Search grounding and narrative use Vertex AI through the runtime service account (`config.llm_enabled()` is true without a key). The two Live API models (`gemini-3.5-transcribe-live` for transcription and `gemini-3.8-live` for the post-hold conversation) are published under those ids on the Gemini API, so `app/llm.py` `live_client()` keeps using the AI Studio key for them unless `RAKSHAK_LIVE_VIA_VERTEX=1` is set, which has not been exercised. Keep the secret mounted in this mode; `/api/health` reports `live: false` when neither is available and audio transcription is then disabled (the transcript-driven path still works).
 
 ```bash
 gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:${RUN_SA}" --role=roles/aiplatform.user
@@ -89,7 +89,7 @@ What it does: enables the APIs, creates the secret if missing, creates the `raks
 
 ```bash
 export URL=$(gcloud run services describe rakshak --project "$PROJECT" --region "$REGION" --format 'value(status.url)')
-curl -s "$URL/healthz" | jq
+curl -s "$URL/api/health" | jq
 # expect: {"ok":true,"llm":true,"live":true,"vertex":false,"project":null,"models":{"rubric":"gemini-3.5-flash","transcribe":"gemini-3.5-transcribe-live","tts":"gemini-3.8-flash-tts","live":"gemini-3.8-live","agent":"gemini-3.8-flash"},...}
 gcloud run services logs read rakshak --project "$PROJECT" --region "$REGION" --limit 50 | grep -E "prewarmed|Using FirestoreStore|Firestore unavailable"
 ```
@@ -226,7 +226,7 @@ Order-of-magnitude only; check the current pricing pages before quoting.
 
 * **Cloud Logging**: all `rakshak.*` loggers write to stdout; useful filters are `"generate_json"` (rubric and narrative failures and retries), `"transcriber["` (Live reconnects), `"ADK run failed"`, `"hold expired"`, `"Pub/Sub publish failed"`. Tail with `gcloud run services logs tail rakshak --region "$REGION" --project "$PROJECT"`.
 * **Cloud Run metrics**: request latency, instance count, container CPU and memory, and open WebSocket connections per instance in the console.
-* **Uptime check**: `GET /healthz` returns `ok: true` and `llm: true`.
+* **Uptime check**: `GET /api/health` returns `ok: true` and `llm: true`.
 * **Agent observability**: in this prototype every ADK event is captured per case (`case.trace`) and rendered on `/desk`. When the pipeline moves to Vertex AI Agent Runtime, Agent Observability (traces, tool-call spans, token usage) replaces the hand-rolled trace.
 
 ## 15. Rollback

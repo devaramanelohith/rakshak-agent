@@ -47,7 +47,7 @@ REST:
 
 | Method and path | Purpose |
 |---|---|
-| `GET /healthz` | `ok`, `llm`, `live`, `vertex`, `project`, model ids |
+| `GET /api/health` | `ok`, `llm`, `live`, `vertex`, `project`, model ids |
 | `POST /api/sessions`, `GET /api/sessions`, `GET /api/sessions/{id}` | Create or inspect a call session (`mode`: audio, text, replay, eval) |
 | `POST /api/sessions/{id}/turns` | Transcript-driven input (`speaker` caller or user, `text`, optional `t`) |
 | `POST /api/sessions/{id}/analyze` | Run the rubric now and return it |
@@ -289,7 +289,7 @@ What the deploy script configures today, and the production shape it points to.
 | Rubric call fails or times out (25 s, 2 retries on 429/5xx) | `analysis_error` event; the previous rubric stays in force |
 | TTS slower than 1.5 s at the payment moment | The hold screen is already up; the voice arrives as a private `rakshak_audio` message when synthesis finishes (20 s limit); `audio_b64` in the HTTP response is null |
 | TTS fails | The screen shows the spoken text; no audio |
-| Vertex selected without an AI Studio key | Rubric, TTS, agents and narrative run through Vertex; `live` is false on `/healthz`, no transcriber is started for audio (use the transcript-driven path or typed lines), and the post-hold conversation socket returns an `error` until `RAKSHAK_LIVE_VIA_VERTEX=1` or a key is provided |
+| Vertex selected without an AI Studio key | Rubric, TTS, agents and narrative run through Vertex; `live` is false on `/api/health`, no transcriber is started for audio (use the transcript-driven path or typed lines), and the post-hold conversation socket returns an `error` until `RAKSHAK_LIVE_VIA_VERTEX=1` or a key is provided |
 | ADK run fails | Retry once on `gemini-3.5-flash`; if that fails, `agent_status: failed` and the policy decision stands |
 | ADK run exceeds 60 s | Trace records the timeout; no retry; policy decision stands |
 | Agent is more lenient than policy | Policy floor; reason appended |

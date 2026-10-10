@@ -47,5 +47,5 @@ async def test_benign_payment_proceeds():
 @pytest.mark.asyncio
 async def test_healthz():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as c:
-        r = await c.get("/healthz")
+        r = await c.get("/api/health")
         assert r.status_code == 200 and r.json()["ok"] is True

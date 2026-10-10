@@ -85,7 +85,7 @@ Then open:
 * `http://localhost:8080/` the customer's bank app ("SafePay") with the guardian profile, call screen and UPI pay screen
 * `http://localhost:8080/scammer` the caller console (join with the session id shown on the phone)
 * `http://localhost:8080/desk` the bank's fraud desk
-* `http://localhost:8080/healthz` reports `llm`, `live`, `vertex` and the configured model ids
+* `http://localhost:8080/api/health` reports `llm`, `live`, `vertex` and the configured model ids
 
 On first start with a key, Rakshak pre-generates the hold, warn and whisper clips for the two demo profiles (`RAKSHAK_PREWARM_TTS=1`, cached in `data/tts_cache/`), and the pay screen asks for the clip for the exact amount as soon as it opens, so the barge-in is instant. `uv run pytest` runs the 10 offline tests (they set `RAKSHAK_FAKE_LLM=1` themselves). `uv sync --extra gcp` adds the Firestore, BigQuery and Pub/Sub clients.
 

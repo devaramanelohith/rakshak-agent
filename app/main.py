@@ -89,7 +89,8 @@ async def desk_page():
     return _page("desk.html")
 
 
-@app.get("/healthz")
+@app.get("/api/health")
+@app.get("/healthz")  # note: Cloud Run's front end intercepts /healthz; use /api/health there
 async def healthz():
     return {"ok": True, "llm": settings.llm_enabled(), "live": settings.live_enabled(), "vertex": settings.use_vertex, "project": settings.project if settings.use_vertex else None, "models": {"rubric": settings.model_rubric, "transcribe": settings.model_transcribe_live, "tts": settings.model_tts, "live": settings.model_live, "agent": settings.model_agent}, "time": time.time()}
 
