@@ -16,7 +16,14 @@ if ! gcloud secrets describe "$SECRET" --project "$PROJECT" >/dev/null 2>&1; the
 fi
 gcloud pubsub topics create rakshak-alerts --project "$PROJECT" 2>/dev/null || true
 
-ENV_VARS="GOOGLE_CLOUD_PROJECT=$PROJECT,GOOGLE_CLOUD_LOCATION=$REGION,PUBSUB_ALERT_TOPIC=rakshak-alerts,USE_FIRESTORE=${USE_FIRESTORE:-false}"
+# The Cloud Run runtime service account must be able to read the secret and call Vertex AI.
+PROJECT_NUMBER=$(gcloud projects describe "$PROJECT" --format 'value(projectNumber)')
+RUNTIME_SA="${RUNTIME_SA:-$PROJECT_NUMBER-compute@developer.gserviceaccount.com}"
+gcloud secrets add-iam-policy-binding "$SECRET" --project "$PROJECT" --member "serviceAccount:$RUNTIME_SA" --role roles/secretmanager.secretAccessor >/dev/null
+gcloud projects add-iam-policy-binding "$PROJECT" --member "serviceAccount:$RUNTIME_SA" --role roles/aiplatform.user >/dev/null
+
+# Text/agents/TTS go through Vertex (no daily free-tier cap); the Live API uses the AI Studio key from the secret.
+ENV_VARS="GOOGLE_CLOUD_PROJECT=$PROJECT,GOOGLE_CLOUD_LOCATION=${MODEL_LOCATION:-global},GOOGLE_GENAI_USE_VERTEXAI=true,PUBSUB_ALERT_TOPIC=rakshak-alerts,USE_FIRESTORE=${USE_FIRESTORE:-false}"
 [ -n "${BIGQUERY_PAYEE_TABLE:-}" ] && ENV_VARS="$ENV_VARS,BIGQUERY_PAYEE_TABLE=$BIGQUERY_PAYEE_TABLE"
 [ -n "${TWILIO_DIAL_NUMBER:-}" ] && ENV_VARS="$ENV_VARS,TWILIO_DIAL_NUMBER=$TWILIO_DIAL_NUMBER"
 

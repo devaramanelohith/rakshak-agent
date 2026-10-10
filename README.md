@@ -57,10 +57,10 @@ Two decision paths run at the payment moment. The deterministic fusion policy fi
 | Gemini API, `gemini-3.8-flash-tts` | `app/intervention.py` `tts_pcm16` with disk + memory cache and startup `prewarm` | Implemented |
 | Gemini API, `gemini-3.8-live` | `app/guardian_voice.py` (audio in/out, 3 function tools) over `/ws/guardian/{case_id}` | Implemented |
 | Google Search grounding | `app/agents/tools.py` `check_regulated_entity`, after the local advisory table in `app/agents/advisories.py` | Implemented |
-| Google ADK 2.11 (`google-adk==2.11.0`) | `app/agents/pipeline.py`: `SequentialAgent` of two `LlmAgent`s, `Runner`, `InMemorySessionService`, function tools in `app/agents/tools.py` | Implemented |
+| Google ADK 2.11 (`google-adk==2.11.0`) | `app/agents/pipeline.py`: `SequentialAgent` of two `LlmAgent`s on ADK's `Gemini` model wrapper sharing the app's genai client, `Runner`, `InMemorySessionService`, function tools in `app/agents/tools.py` | Implemented |
 | Cloud Run | `Dockerfile`, `scripts/deploy.sh` (WebSockets, session affinity, 3600 s timeout, min instances) | Implemented |
 | Secret Manager | `scripts/deploy.sh` creates `gemini-api-key` and mounts it with `--set-secrets` | Implemented in the deploy script |
-| Vertex AI / Agent Platform endpoints | `app/llm.py` `client()` and `app/config.py` when `GOOGLE_GENAI_USE_VERTEXAI=true` | Optional via env |
+| Vertex AI / Agent Platform endpoints | `app/llm.py` `client()` and `app/config.py` when `GOOGLE_GENAI_USE_VERTEXAI=true` (text, TTS, agents and narrative). The Live API models (`transcribe-live`, `3.8-live`) use a separate `live_client()` on the AI Studio key unless `RAKSHAK_LIVE_VIA_VERTEX=1` | Optional via env |
 | Firestore (native mode) | `app/store.py` `FirestoreStore` (`rakshak_cases`, `rakshak_profiles`, `rakshak_alerts`) | Optional via `USE_FIRESTORE=true` |
 | BigQuery | `app/payee_risk.py` `_from_bigquery`, `sql/payee_risk.sql` (mule features from a ledger), `scripts/load_bigquery.py` (loads the demo table) | Optional via `BIGQUERY_PAYEE_TABLE` |
 | Pub/Sub | `app/alerts.py` `_publish_pubsub` (topic `rakshak-alerts`, attribute `event_type=trusted_contact_alert`) | Optional via `PUBSUB_ALERT_TOPIC` (set by the deploy script) |
@@ -76,7 +76,7 @@ Requirements: Python 3.12, [uv](https://docs.astral.sh/uv/), and a Gemini API ke
 ```bash
 git clone <this repo> rakshak-agent && cd rakshak-agent
 uv sync                      # installs google-adk 2.11, google-genai 2.29, fastapi, uvicorn, pytest
-cp .env.example .env         # set GEMINI_API_KEY=...  (or GOOGLE_GENAI_USE_VERTEXAI=true + GOOGLE_CLOUD_PROJECT)
+cp .env.example .env         # set GEMINI_API_KEY=...
 uv run uvicorn app.main:app --port 8080
 ```
 
@@ -85,9 +85,11 @@ Then open:
 * `http://localhost:8080/` the customer's bank app ("SafePay") with the guardian profile, call screen and UPI pay screen
 * `http://localhost:8080/scammer` the caller console (join with the session id shown on the phone)
 * `http://localhost:8080/desk` the bank's fraud desk
-* `http://localhost:8080/healthz` reports `llm: true` and the configured model ids
+* `http://localhost:8080/healthz` reports `llm`, `live`, `vertex` and the configured model ids
 
-On first start with a key, Rakshak pre-generates the hold, warn and whisper clips for the two demo profiles (`RAKSHAK_PREWARM_TTS=1`, cached in `data/tts_cache/`), so the first barge-in is instant. `uv run pytest` runs the 10 offline tests (they set `RAKSHAK_FAKE_LLM=1` themselves). `uv sync --extra gcp` adds the Firestore, BigQuery and Pub/Sub clients.
+On first start with a key, Rakshak pre-generates the hold, warn and whisper clips for the two demo profiles (`RAKSHAK_PREWARM_TTS=1`, cached in `data/tts_cache/`), and the pay screen asks for the clip for the exact amount as soon as it opens, so the barge-in is instant. `uv run pytest` runs the 10 offline tests (they set `RAKSHAK_FAKE_LLM=1` themselves). `uv sync --extra gcp` adds the Firestore, BigQuery and Pub/Sub clients.
+
+Two things to know before a rehearsal: the free AI Studio tier has small daily request caps on the 3.x models (see section 6 of [docs/DEMO_STRATEGY.md](docs/DEMO_STRATEGY.md)), so enable billing on the AI Studio project or point text, TTS and agent traffic at Vertex AI with `GOOGLE_GENAI_USE_VERTEXAI=true` and `GOOGLE_CLOUD_PROJECT`; and the Live API models (transcription and the post-hold conversation) still use the AI Studio key in that mode unless `RAKSHAK_LIVE_VIA_VERTEX=1` is set, so keep the key configured.
 
 ## How to test it as a judge
 
@@ -97,8 +99,8 @@ Two demo customers exist: `demo-user` (Sunita Rao, 60+, Hindi, trusted contact P
 
 1. Open `/`, tap **Simulate incoming call**.
 2. Pick **Parcel from Taiwan (CBI digital arrest, Hindi)** and tap **Auto-play script**. The scammer's lines are voiced on the phone (Charon voice), transcribed, and the risk meter, signal chips and Hindi reasons update after each utterance. At risk >= 0.85 a private whisper plays on the victim's device only ("Rakshak: careful...").
-3. The replay stops at the `payment_demand` line and shows a toast. Tap **Open UPI pay**: the VPA `cbi.verification@rakshakdemo` and Rs 2,50,000 are pre-filled. Tap **Pay**.
-4. Expect, immediately: the hold screen with a 30:00 countdown, Rakshak speaking in Hindi over the ducked caller audio, the payee card (critical band, 12 payers in 48 h, 96% cashed out in 7 days, 4 complaints on 1930), and "Priya (daughter) has been notified". Within a few seconds the event log shows the ADK agent confirming (`decided_by adk_agent`).
+3. The replay stops at the `payment_demand` line and shows a toast. Tap **Open UPI pay**: the VPA `cbi.verification@rakshakdemo` and Rs 2,50,000 are pre-filled (if the pay screen was already open, the fields fill in when the demand line is reached). Tap **Pay**.
+4. Expect, immediately: the hold screen with a 30:00 countdown, the payee card (critical band, 12 payers in 48 h, 96% cashed out in 7 days, 4 complaints on 1930), and "Priya (daughter) has been notified"; the screen changes first and Rakshak's Hindi voice follows over the ducked caller audio (instantly when the clip was prewarmed, otherwise as soon as TTS returns). Within a few seconds the event log shows the ADK agent confirming (`decided_by adk_agent`).
 5. Try the three exits: **Talk to Rakshak (voice)** opens a Gemini Live conversation that can answer "why did you stop this?" and call `keep_hold`, `request_release` or `call_trusted_contact`; **I know this person, pay anyway** requires typing the exact amount; **Cancel payment & report** closes the case.
 6. Open `/desk`: the case shows the agent decision next to the deterministic policy, the call rubric, payee evidence, the ADK trace (tool calls and results), the generated narrative and the 1930 / ASCom referral text.
 
@@ -143,7 +145,7 @@ See [docs/EVAL_RESULTS.md](docs/EVAL_RESULTS.md) for the numbers of the latest r
 2. **In-app two-device call.** The victim opens `/`, the second person opens `/scammer?session=<id>` on another device or tab and taps **Start my mic**. Audio is relayed between the two browsers (a tiny VoIP) and each leg is transcribed by its own Live session, so the transcript is labelled without diarization. The scammer can also type a line (voiced on the victim's phone) or click lines from a script.
 3. **Real phone number via Twilio.** Point a Twilio number's Voice webhook at `POST https://<url>/twilio/voice?session=phone`. Twilio announces "Rakshak guardian mode is on for this call", dials `TWILIO_DIAL_NUMBER` (the "scammer" phone) and forks both tracks as 8 kHz mu-law to `/ws/twilio/phone`; the bridge resamples to 16 kHz and feeds the same transcribers. Open `/?session=phone` to watch the risk meter and pay. This is the telco-side deployment shape. Note that the hold voice plays on the app device, not into the PSTN call.
 
-The demo run-book (which flow to show, in what order, what to record for the video) is [docs/DEMO_STRATEGY.md](docs/DEMO_STRATEGY.md).
+The demo run-book (the four demo layers L0 to L3, the Singapore stage script, what to record for the video, and the quota warning) is [docs/DEMO_STRATEGY.md](docs/DEMO_STRATEGY.md); the day-by-day plan to the 18 October deadline is [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md).
 
 ## Deployment
 
@@ -158,15 +160,15 @@ The script enables the APIs, stores the key in Secret Manager, creates the `raks
 ```
 rakshak-agent/
   app/
-    main.py              FastAPI app: pages, REST API, WebSockets (/ws/events, /ws/call, /ws/guardian), lifespan tasks
-    config.py            Settings from env: models, thresholds (warn 0.45, hold 0.70, whisper 0.85), hold minutes, GCP toggles
+    main.py              FastAPI app: pages, REST API (incl. per-amount TTS prewarm), WebSockets (/ws/events, /ws/call, /ws/guardian), lifespan tasks
+    config.py            Settings from env: models, thresholds (warn 0.45, hold 0.70, whisper 0.85), hold minutes, GCP toggles, Live routing
     session.py           CallSession and SessionRegistry: audio relay, per-speaker transcribers, debounced analysis, whisper
     analysis.py          LiveTranscriber (Gemini Live), Rubric schema + prompt, keyword stub for offline mode
-    llm.py               google-genai client, generate_json with retries
+    llm.py               google-genai clients (Vertex or AI Studio; separate Live client), generate_json with retries
     policy.py            Deterministic fusion policy: call risk x payee risk x profile -> proceed/warn/hold/hold_and_alert
     payee_risk.py        Payee lookup: BigQuery (optional) -> data/payees.json -> thin-file default
     intervention.py      Hold/warn/whisper scripts in hi, en, en-sg, kn, ta, hinglish; TTS with cache; prewarm
-    payment.py           Payment-moment orchestration: fast path, agent follow-up, policy floor, override, cancel, hold expiry
+    payment.py           Payment-moment orchestration: fast path, agent follow-up, policy floor, override, cancel, hold expiry, prewarm
     narrative.py         Fraud-desk narrative + 1930 referral (gemini-3.8-flash JSON)
     alerts.py            Trusted-contact alert: in-app always, Pub/Sub and Twilio SMS optional
     store.py             MemoryStore (data/runtime/*.json) and FirestoreStore
@@ -198,7 +200,7 @@ rakshak-agent/
     runtime/             cases.json, profiles.json, alerts.json, eval_results.json (git-ignored)
     tts_cache/           cached guardian audio (git-ignored)
   tests/                 10 offline tests (API flow, policy, audio helpers)
-  docs/                  ARCHITECTURE, DEPLOYMENT, DECK_OUTLINE, SECURITY_PRIVACY, EVAL_RESULTS
+  docs/                  ARCHITECTURE, DEPLOYMENT, DECK_OUTLINE, SECURITY_PRIVACY, EVAL_RESULTS, DEMO_STRATEGY, BUILD_PLAN
   Dockerfile, pyproject.toml, uv.lock, .env.example
 ```
 
@@ -220,6 +222,8 @@ Details, DPDP Act and MAS considerations, and the production client path (Fireba
 * **Live transcription emits per utterance.** `gemini-3.5-transcribe-live` returns text in utterance-sized chunks and the session appends each as a turn; the 1.2 s debounce and 3 s minimum interval keep the rubric calls bounded, but a long sentence can land as two turns.
 * **Search grounding quota.** `check_regulated_entity` falls back to Google Search grounding only when the local advisory table has no match, with an 8 s timeout; on quota errors the verdict is `unclear` and the policy floor still applies.
 * **Kannada and Tamil voice untested.** Hold and whisper scripts exist for `kn` and `ta`, but the TTS output in those languages has not been reviewed by native speakers; warn scripts fall back to English for them.
+* **Free-tier quota.** On a free AI Studio key the 3.x models have small daily request caps (one rehearsal can exhaust `gemini-3.8-flash`); see the quota note in `docs/DEMO_STRATEGY.md`. Billing on the AI Studio project or the Vertex AI path removes the cap.
+* **Live API through Vertex AI is untested.** With `GOOGLE_GENAI_USE_VERTEXAI=true` the transcription and post-hold conversation still use the AI Studio key by default; `RAKSHAK_LIVE_VIA_VERTEX=1` exists but has not been exercised.
 * **Prototype security posture.** Endpoints are unauthenticated and CORS is open; see the production path in the security doc.
 * **Roadmap.** Real mule features from the bank ledger through `sql/payee_risk.sql`; move the ADK pipeline to Vertex AI Agent Runtime and customer profiles to Memory Bank; bidirectional Twilio stream so the barge-in reaches the phone call; native-speaker review of Kannada and Tamil; a bank pilot behind Firebase Auth and App Check.
 

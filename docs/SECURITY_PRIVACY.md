@@ -43,7 +43,7 @@ Retention controls that exist today: `data/runtime/` and `data/tts_cache/` are g
 
 * The Gemini key is read from `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) in the environment. Locally it lives in `.env`, which is git-ignored and must never be committed; `.env.example` has placeholders only.
 * On Cloud Run the key is stored in Secret Manager (`gemini-api-key`) and mounted as an environment variable by `scripts/deploy.sh` with `--set-secrets`; the runtime service account needs only `roles/secretmanager.secretAccessor` on that secret.
-* The Vertex AI alternative (`GOOGLE_GENAI_USE_VERTEXAI=true`) removes the API key entirely and uses the service account's identity.
+* The Vertex AI alternative (`GOOGLE_GENAI_USE_VERTEXAI=true`) uses the service account's identity for text, TTS, agent and narrative calls and removes the key from the process environment for those clients; the two Live API models still use the AI Studio key through a separate client unless `RAKSHAK_LIVE_VIA_VERTEX=1`. `RAKSHAK_ACCESS_TOKEN` (a short-lived `gcloud` access token) exists for local development without Application Default Credentials and must never be set on a deployed service.
 * Twilio credentials, when used, go in Secret Manager the same way (see `docs/DEPLOYMENT.md`); the auth token is used server-side only for the SMS REST call.
 * Logs truncate error messages and never print keys; prompts are not logged.
 

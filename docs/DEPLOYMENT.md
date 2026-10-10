@@ -46,19 +46,20 @@ gcloud secrets add-iam-policy-binding gemini-api-key --project "$PROJECT" \
 
 `deploy.sh` creates the secret for you from `$GEMINI_API_KEY` if it does not exist, but it does not grant the accessor role; do it once as above.
 
+Quota note: a free AI Studio key has small daily request caps on the 3.x models (one rehearsal can exhaust `gemini-3.8-flash`; see section 6 of `docs/DEMO_STRATEGY.md`). Before recording or judging, either enable billing on the AI Studio project or move text, TTS and agent traffic to Vertex AI as in 3b.
+
 ## 3b. Alternative: Vertex AI / Agent Platform endpoints with the $300 trial
 
-The $300 trial credit applies to Vertex AI usage, not to AI Studio keys. To use it, set `GOOGLE_GENAI_USE_VERTEXAI=true` and give the runtime service account the Vertex AI user role; no API key is needed and `config.llm_enabled()` returns true.
+The $300 trial credit applies to Vertex AI usage, not to AI Studio keys. With `GOOGLE_GENAI_USE_VERTEXAI=true` the rubric, TTS, ADK agents, Search grounding and narrative use Vertex AI through the runtime service account (`config.llm_enabled()` is true without a key). The two Live API models (`gemini-3.5-transcribe-live` for transcription and `gemini-3.8-live` for the post-hold conversation) are published under those ids on the Gemini API, so `app/llm.py` `live_client()` keeps using the AI Studio key for them unless `RAKSHAK_LIVE_VIA_VERTEX=1` is set, which has not been exercised. Keep the secret mounted in this mode; `/healthz` reports `live: false` when neither is available and audio transcription is then disabled (the transcript-driven path still works).
 
 ```bash
 gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:${RUN_SA}" --role=roles/aiplatform.user
-gcloud run deploy rakshak --source . --project "$PROJECT" --region "$REGION" \
-  --allow-unauthenticated --port 8080 --cpu 1 --memory 1Gi --concurrency 40 \
-  --min-instances 1 --max-instances 10 --timeout 3600 --session-affinity \
-  --set-env-vars "GOOGLE_GENAI_USE_VERTEXAI=true,GOOGLE_CLOUD_PROJECT=$PROJECT,GOOGLE_CLOUD_LOCATION=$REGION,PUBSUB_ALERT_TOPIC=rakshak-alerts"
+PROJECT=$PROJECT REGION=$REGION ./scripts/deploy.sh      # deploys with the secret mounted, as in step 4
+gcloud run services update rakshak --project "$PROJECT" --region "$REGION" \
+  --update-env-vars "GOOGLE_GENAI_USE_VERTEXAI=true,GOOGLE_CLOUD_LOCATION=global"
 ```
 
-Caveats: the model ids in `app/config.py` were verified against the Gemini API on 2026-10-10, not against Vertex AI in every region; confirm each id is served in `$REGION` before switching, and run `scripts/smoke_agent.py` locally with the same env to exercise the Live, TTS and ADK paths through Vertex. `deploy.sh` always passes `--set-secrets`, so for a key-less Vertex deployment use the direct `gcloud run deploy` above.
+`GOOGLE_CLOUD_LOCATION` is the Vertex model location, separate from the Cloud Run region. `app/config.py` defaults it to `global`, but `deploy.sh` sets it to `$REGION`; override it to `global` (as above) unless you have confirmed every model id is served in `$REGION`. The model ids in `app/config.py` were verified against the Gemini API on 2026-10-10, not against Vertex AI; run `scripts/smoke_agent.py` locally with the same env to exercise the rubric, TTS and ADK paths through Vertex before relying on it. For a local run without Application Default Credentials, `RAKSHAK_ACCESS_TOKEN=$(gcloud auth print-access-token)` in `.env` makes `client()` use that short-lived token; never set it on Cloud Run.
 
 ## 4. Deploy with `scripts/deploy.sh`
 
@@ -82,18 +83,18 @@ Environment variables the script reads:
 | `TWILIO_DIAL_NUMBER` | unset | Passed to the service when set |
 | `MIN_INSTANCES` / `MAX_INSTANCES` | `1` / `10` | Autoscaling bounds |
 
-What it does: enables the APIs, creates the secret if missing, creates the `rakshak-alerts` topic (idempotent), runs `gcloud run deploy --source .` (Cloud Build builds the `Dockerfile`: `python:3.12-slim`, `uv sync --extra gcp`, `uvicorn --ws websockets`), sets `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`, `PUBSUB_ALERT_TOPIC`, `USE_FIRESTORE`, mounts the secret, then reads the service URL and writes it back as `PUBLIC_BASE_URL` (used by the Twilio TwiML to build the `wss://` stream URL). The last line prints the three URLs.
+What it does: enables the APIs, creates the secret if missing, creates the `rakshak-alerts` topic (idempotent), runs `gcloud run deploy --source .` (Cloud Build builds the `Dockerfile`: `python:3.12-slim`, `uv sync --extra gcp`, `uvicorn --ws websockets`), sets `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` (to `$REGION`; only relevant when Vertex is selected, see 3b), `PUBSUB_ALERT_TOPIC`, `USE_FIRESTORE`, mounts the secret, then reads the service URL and writes it back as `PUBLIC_BASE_URL` (used by the Twilio TwiML to build the `wss://` stream URL). The last line prints the three URLs.
 
 ## 5. Verify
 
 ```bash
 export URL=$(gcloud run services describe rakshak --project "$PROJECT" --region "$REGION" --format 'value(status.url)')
 curl -s "$URL/healthz" | jq
-# expect: {"ok":true,"llm":true,"models":{"rubric":"gemini-3.5-flash","transcribe":"gemini-3.5-transcribe-live","tts":"gemini-3.8-flash-tts","live":"gemini-3.8-live","agent":"gemini-3.8-flash"},...}
+# expect: {"ok":true,"llm":true,"live":true,"vertex":false,"project":null,"models":{"rubric":"gemini-3.5-flash","transcribe":"gemini-3.5-transcribe-live","tts":"gemini-3.8-flash-tts","live":"gemini-3.8-live","agent":"gemini-3.8-flash"},...}
 gcloud run services logs read rakshak --project "$PROJECT" --region "$REGION" --limit 50 | grep -E "prewarmed|Using FirestoreStore|Firestore unavailable"
 ```
 
-Then run the curl flow from the README ("Flow 3") against `$URL`, and open `$URL/`, `$URL/scammer`, `$URL/desk` in a browser. The pages need a secure context for the microphone; the `run.app` URL is HTTPS, so this works out of the box. If `llm` is `false`, the secret did not mount: check the IAM binding from step 3a and the revision's environment in the console.
+Then run the curl flow from the README ("Flow 3") against `$URL`, and open `$URL/`, `$URL/scammer`, `$URL/desk` in a browser. The pages need a secure context for the microphone; the `run.app` URL is HTTPS, so this works out of the box. If `llm` is `false`, the secret did not mount: check the IAM binding from step 3a and the revision's environment in the console. If `llm` is `true` but `live` is `false`, Vertex is selected without an AI Studio key, so audio transcription and the post-hold conversation are off (see 3b).
 
 ## 6. Firestore (native mode) for durable cases
 
