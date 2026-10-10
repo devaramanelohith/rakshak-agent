@@ -27,7 +27,7 @@ ENV_VARS="GOOGLE_CLOUD_PROJECT=$PROJECT,GOOGLE_CLOUD_LOCATION=${MODEL_LOCATION:-
 [ -n "${BIGQUERY_PAYEE_TABLE:-}" ] && ENV_VARS="$ENV_VARS,BIGQUERY_PAYEE_TABLE=$BIGQUERY_PAYEE_TABLE"
 [ -n "${TWILIO_DIAL_NUMBER:-}" ] && ENV_VARS="$ENV_VARS,TWILIO_DIAL_NUMBER=$TWILIO_DIAL_NUMBER"
 
-gcloud run deploy "$SERVICE" --source . --project "$PROJECT" --region "$REGION" \
+gcloud run deploy "$SERVICE" --source . --quiet --project "$PROJECT" --region "$REGION" \
   --allow-unauthenticated --port 8080 --cpu 1 --memory 1Gi --concurrency 40 \
   --min-instances "${MIN_INSTANCES:-1}" --max-instances "${MAX_INSTANCES:-10}" --timeout 3600 \
   --session-affinity --set-env-vars "$ENV_VARS" --set-secrets "GEMINI_API_KEY=$SECRET:latest"

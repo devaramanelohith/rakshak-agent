@@ -1,0 +1,8 @@
+node_modules
+.venv
+.env
+.git
+.pytest_cache
+.ruff_cache
+data/runtime/*.json
+data/tts_cache/*.wav
