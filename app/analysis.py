@@ -241,14 +241,16 @@ class LiveTranscriber:
 
             send_task = asyncio.create_task(sender())
             try:
-                async for msg in session.receive():
-                    sc = msg.server_content
-                    if sc and sc.input_transcription and sc.input_transcription.text:
-                        text = sc.input_transcription.text.strip()
-                        if text:
-                            await self.on_text(self.role, text)
-                    if self._stopped and send_task.done():
-                        break
+                # receive() returns after each complete turn; keep the session open across utterances.
+                while not (self._stopped and send_task.done()):
+                    async for msg in session.receive():
+                        sc = msg.server_content
+                        if sc and sc.input_transcription and sc.input_transcription.text:
+                            text = sc.input_transcription.text.strip()
+                            if text:
+                                await self.on_text(self.role, text)
+                        if self._stopped and send_task.done():
+                            break
             finally:
                 if not send_task.done():
                     send_task.cancel()

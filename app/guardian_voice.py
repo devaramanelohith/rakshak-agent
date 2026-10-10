@@ -73,7 +73,13 @@ async def run_guardian_voice(ws: WebSocket, case_id: str) -> None:
                         return
 
         async def to_browser():
-            async for m in live.receive():
+            # receive() yields one complete model turn and returns; keep reading turns until the client ends.
+            while True:
+                async for m in live.receive():
+                    await _handle(m)
+
+        async def _handle(m):
+            if True:
                 sc = m.server_content
                 if sc:
                     if sc.model_turn:
