@@ -37,7 +37,7 @@ def test_tick_adds_transactions_and_lookup_has_lineage():
     sim = _sim()
     before = sim.stats()["tx_in_window"]
     sim.tick(batch=20)
-    assert sim.stats()["tx_in_window"] == before + 20
+    assert sim.stats()["tx_in_window"] >= before + 20
     row = lookup_payee("cbi.verification@rakshakdemo")
     assert isinstance(row["lineage"], (dict, str))
     if isinstance(row["lineage"], dict):

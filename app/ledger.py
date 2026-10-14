@@ -121,10 +121,14 @@ class LedgerSimulator:
             p = self.profiles[vpa]
             band = p.get("risk_band", "low")
             avg = float(p.get("avg_ticket_inr") or 1500)
-            if band in ("critical", "high") and r.random() < 0.7:
-                tx = Tx(uuid.uuid4().hex[:12], now - r.uniform(0, 30), f"victim{r.randint(100, 999)}@rakshakdemo", vpa, round(max(500.0, r.gauss(avg, avg * 0.35)), 2), "inflow")
-            elif band in ("critical", "high"):
-                tx = Tx(uuid.uuid4().hex[:12], now - r.uniform(0, 30), vpa, f"mule{r.randint(10, 99)}@rakshakdemo", round(max(500.0, r.gauss(avg, avg * 0.5)), 2), "cashout")
+            if band in ("critical", "high"):
+                # a mule receives from a new victim and forwards most of it within minutes: keep the ratio true to profile
+                amt = round(max(500.0, r.gauss(avg, avg * 0.35)), 2)
+                tx = Tx(uuid.uuid4().hex[:12], now - r.uniform(5, 30), f"victim{r.randint(100, 999)}@rakshakdemo", vpa, amt, "inflow")
+                self._append(tx)
+                new.append(tx)
+                cash = float(p.get("cash_out_ratio_7d") or 0.9)
+                tx = Tx(uuid.uuid4().hex[:12], now - r.uniform(0, 5), vpa, f"mule{r.randint(10, 99)}@rakshakdemo", round(amt * max(cash, 0.85), 2), "cashout")
             else:
                 tx = Tx(uuid.uuid4().hex[:12], now - r.uniform(0, 30), f"cust{r.randint(100, 999)}@rakshakdemo", vpa, round(max(50.0, r.gauss(avg, avg * 0.5)), 2), "inflow")
             self._append(tx)
