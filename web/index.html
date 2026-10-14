@@ -1,102 +1,273 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-app="customer">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SafePay · Rakshak guardian demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f3f5f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1219" media="(prefers-color-scheme: dark)">
+<title>SafePay · Rakshak guardian</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
 <div class="stage">
-  <div class="phone"><div class="screen">
-    <div class="topbar"><span id="clock">09:41</span><span><span id="guardianPill" class="pill on">Rakshak ON</span></span></div>
+  <div class="phone"><main class="screen" id="screen">
+    <div class="topbar" role="region" aria-label="Status bar">
+      <span id="clock" class="num">09:41</span>
+      <div class="cluster">
+        <span id="listenChip" class="listen is-off" role="status" aria-live="polite"><span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span id="listenText">Rakshak idle</span></span>
+        <span id="guardianPill" class="pill pill--ok">Guardian on</span>
+      </div>
+    </div>
+
+    <!-- BOOT / SERVER ERROR -->
+    <section id="view-boot" class="view is-active" aria-label="Loading">
+      <div class="view__body" id="bootBody">
+        <div class="card"><div class="skeleton" style="height:28px;width:60%"></div><div class="skeleton" style="height:18px;width:40%;margin-top:12px"></div></div>
+        <div class="card"><div class="skeleton" style="height:48px"></div></div>
+        <p class="muted small" style="text-align:center">Connecting to Rakshak…</p>
+      </div>
+    </section>
 
     <!-- HOME -->
-    <section id="view-home" class="view active">
-      <h1>SafePay</h1>
-      <div class="muted" id="homeName">Namaste</div>
-      <div class="card"><div class="muted">Savings account</div><div class="balance">₹4,82,310</div></div>
-      <button class="btn" id="btnPay">Pay via UPI</button>
-      <button class="btn secondary" id="btnIncoming">Simulate incoming call</button>
-      <h3>Guardian profile</h3>
-      <div class="card">
-        <label>Demo customer</label>
-        <select id="userSel"><option value="demo-user">Sunita Rao · 60+ · Hindi · trusted: Priya (daughter)</option><option value="demo-user-en">Daniel Tan · 25-39 · Singapore English · trusted: Mei (spouse)</option></select>
-        <label>Language for Rakshak's voice</label>
-        <select id="langSel"><option value="hi">Hindi</option><option value="hinglish">Hinglish</option><option value="en">English</option><option value="en-sg">English (Singapore)</option><option value="kn">Kannada</option><option value="ta">Tamil</option></select>
-        <label>Trusted contact</label><input id="contactInp" placeholder="Priya (daughter)">
-        <label><input type="checkbox" id="guardianChk" checked style="width:auto;margin-right:6px">Guardian mode (opt-in: Rakshak listens to calls on this device)</label>
-        <button class="btn ghost" id="btnSaveProfile">Save profile</button>
+    <section id="view-home" class="view" aria-labelledby="homeTitle">
+      <div class="view__head"><div><h1 id="homeTitle">SafePay</h1><div class="muted" id="homeName">Namaste</div></div></div>
+      <div class="view__body">
+        <div class="card" id="guardianCard" aria-labelledby="guardianCardTitle">
+          <div class="between"><div class="card__title" id="guardianCardTitle" style="margin:0"><span id="gCardIco"></span>Rakshak guardian</div><button class="btn btn--ghost btn--sm" id="btnEditGuardian" type="button">Edit</button></div>
+          <div class="stack-sm" style="margin-top:8px">
+            <div class="status-tile"><span id="gStatusIcon"></span><div><div class="strong" id="gStatusText">Guardian mode is on</div><div class="small muted" id="gTierText">Privacy tier 2 · cloud analysis (demo)</div></div></div>
+            <div class="status-tile"><span id="gContactIcon"></span><div><div class="strong">Trusted contact</div><div class="small muted" id="gContactText">Priya (daughter)</div></div></div>
+            <div class="status-tile"><span id="gLangIcon"></span><div><div class="strong">Rakshak speaks</div><div class="small muted" id="gLangText">Hindi</div></div></div>
+          </div>
+        </div>
+        <div class="card"><div class="eyebrow">Savings account</div><div class="balance" aria-label="Balance 4 lakh 82 thousand 310 rupees">₹4,82,310</div><div class="small muted">Available to spend</div></div>
+        <button class="btn btn--primary btn--block btn--lg" id="btnPay" type="button"><span id="icoPay"></span>Pay via UPI</button>
+        <div class="action-tiles">
+          <button class="action-tile" id="btnIncoming" type="button"><span id="icoIncoming"></span>Simulate incoming call</button>
+          <button class="action-tile" id="btnDrill" type="button"><span id="icoDrill"></span>Practice drill</button>
+          <a class="action-tile" href="/desk" target="_blank" rel="noopener" id="lnkDesk"><span id="icoDesk"></span>Fraud desk</a>
+        </div>
+        <details class="collapse">
+          <summary>Demo controls</summary>
+          <div class="collapse__body">
+            <div class="field"><label for="userSel">Demo customer</label>
+              <select id="userSel"><option value="demo-user">Sunita Rao · 60+ · Hindi · trusted: Priya (daughter)</option><option value="demo-user-en">Daniel Tan · 25-39 · Singapore English · trusted: Mei (spouse)</option></select></div>
+            <div class="small muted">Session <b id="sidText" class="mono">…</b></div>
+            <div class="small muted">Caller console: <a id="scammerLink" target="_blank" rel="noopener">open on another device</a></div>
+            <button class="btn btn--ghost btn--sm" id="btnReOnboard" type="button" style="margin-top:8px">Show onboarding again</button>
+          </div>
+        </details>
       </div>
-      <h3>Session</h3>
-      <div class="card"><div class="muted">Session id <b id="sidText">…</b></div><div class="muted">Scammer console: <a id="scammerLink" target="_blank">open</a> · Fraud desk: <a href="/desk" target="_blank">open</a></div></div>
     </section>
 
     <!-- CALL -->
-    <section id="view-call" class="view">
-      <div class="caller"><div class="muted">Incoming call</div><div class="num" id="callerNum">+91 98765 00301</div><div class="timer" id="callTimer">00:00</div></div>
-      <div class="row"><span class="pill live" id="listenPill">Rakshak listening</span><span class="pill" id="micPill">mic off</span></div>
-      <div class="banner" id="whisperBanner"></div>
-      <h3>Scam risk <span id="riskPct" style="float:right;color:#fff">0%</span></h3>
-      <div class="meter"><div id="riskBar"></div></div>
-      <div class="chips" id="signalChips"></div>
-      <ul class="reasons" id="reasons"></ul>
-      <h3>Live transcript</h3>
-      <div class="card transcript" id="transcript"><div class="muted">Waiting for speech…</div></div>
-      <div class="card">
-        <label>Play a scripted caller (for the demo)</label>
-        <select id="scriptSel"></select>
-        <div class="row"><button class="btn secondary" id="btnReplay">Auto-play script</button><button class="btn ghost" id="btnMic">Use my mic</button></div>
+    <section id="view-call" class="view" aria-labelledby="callTitle">
+      <div class="view__body">
+        <div class="caller-id">
+          <div class="caller-id__avatar" id="callerAvatar"></div>
+          <div class="eyebrow" id="callTitle">Incoming call · unknown number</div>
+          <div class="caller-id__num" id="callerNum">+91 98765 00301</div>
+          <div class="caller-id__timer num" id="callTimer" aria-label="Call duration">00:00</div>
+        </div>
+        <div class="banner banner--hold" id="whisperBanner" role="alert" hidden><span id="whisperIco"></span><div class="banner__body"><div class="banner__title">Rakshak whispered to you</div><div id="whisperText"></div></div></div>
+        <div class="banner banner--warn" id="audioBanner" hidden><span id="audioIco"></span><div class="banner__body"><div class="banner__title">Sound is blocked until you tap</div><div>Your browser only plays audio after a tap. Tap the button to hear the caller and Rakshak.</div><button class="btn btn--secondary btn--sm" id="btnEnableAudio" type="button">Enable sound</button></div></div>
+
+        <div class="card" aria-labelledby="riskTitle">
+          <div class="between"><div class="card__title" id="riskTitle" style="margin:0">Scam risk</div><span class="pill" id="stagePill">waiting</span></div>
+          <div class="gauge gauge--low" id="riskGauge" style="margin-top:8px">
+            <svg class="gauge__svg" viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="gauge__track" cx="60" cy="60" r="46"/>
+              <circle class="gauge__bands" cx="60" cy="60" r="56" stroke="var(--c-band-low)" stroke-dasharray="158.3 351.9" transform="rotate(-90 60 60)"/>
+              <circle class="gauge__bands" cx="60" cy="60" r="56" stroke="var(--c-band-elevated)" stroke-dasharray="87.9 351.9" stroke-dashoffset="-158.3" transform="rotate(-90 60 60)"/>
+              <circle class="gauge__bands" cx="60" cy="60" r="56" stroke="var(--c-band-high)" stroke-dasharray="105.5 351.9" stroke-dashoffset="-246.2" transform="rotate(-90 60 60)"/>
+              <circle class="gauge__arc" id="riskArc" cx="60" cy="60" r="46" stroke-dasharray="289.03" stroke-dashoffset="289.03" transform="rotate(-90 60 60)"/>
+              <text class="gauge__pct" x="60" y="58" text-anchor="middle" dominant-baseline="middle" id="riskPct">0%</text>
+              <text class="gauge__lbl" x="60" y="78" text-anchor="middle" id="riskLbl">RISK</text>
+            </svg>
+            <div class="gauge__text">
+              <div class="gauge__band" id="riskBandText"><span id="riskBandIco"></span><span id="riskBandLabel">Low</span></div>
+              <div class="small muted" id="riskHint">Rakshak listens for pressure, threats and secrecy.</div>
+              <div class="visually-hidden" id="riskLive" aria-live="polite" role="status"></div>
+            </div>
+          </div>
+          <div class="chips" id="signalChips" style="margin-top:10px" aria-label="Signals detected"></div>
+          <ul class="safe-list" id="reasons" aria-label="Why" style="margin-top:8px"></ul>
+        </div>
+
+        <div class="card" aria-labelledby="trTitle">
+          <div class="card__title" id="trTitle">Live transcript</div>
+          <div class="tr tr--scroll" id="transcript" aria-live="off"><div class="empty"><span id="trEmptyIco"></span><div class="empty__title">Waiting for speech</div><div class="small">Turn on your mic or play a scripted caller.</div></div></div>
+        </div>
+
+        <div class="banner banner--warn" id="micBanner" hidden><span id="micIco"></span><div class="banner__body"><div class="banner__title" id="micBannerTitle">Microphone not available</div><div id="micBannerText"></div><button class="btn btn--secondary btn--sm" id="btnUseScript" type="button">Use a scripted caller instead</button></div></div>
+
+        <div class="card" aria-labelledby="ctlTitle">
+          <div class="card__title" id="ctlTitle">Call controls</div>
+          <div class="btn-row"><button class="btn btn--secondary" id="btnMic" type="button" aria-pressed="false"><span id="icoMic"></span>Use my mic</button></div>
+          <div class="field" style="margin-top:12px"><label for="scriptSel">Scripted caller (demo)</label><select id="scriptSel"></select></div>
+          <div class="btn-row"><button class="btn btn--secondary" id="btnReplay" type="button"><span id="icoReplay"></span>Auto-play script</button><button class="btn btn--ghost" id="btnReplayStop" type="button">Stop</button></div>
+        </div>
       </div>
-      <div class="row"><button class="btn" id="btnOpenPay">Open UPI pay</button><button class="btn danger" id="btnEndCall">End call</button></div>
+      <div class="view__foot"><div class="btn-row"><button class="btn btn--primary" id="btnOpenPay" type="button"><span id="icoOpenPay"></span>Open UPI pay</button><button class="btn btn--danger" id="btnEndCall" type="button"><span id="icoEnd"></span>End call</button></div></div>
     </section>
 
     <!-- PAY -->
-    <section id="view-pay" class="view">
-      <h1>Send money</h1>
-      <div class="muted" id="payCallNote"></div>
-      <label>Payee UPI ID</label><input id="vpaInp" placeholder="name@bank">
-      <label>Payee name</label><input id="payeeNameInp" placeholder="as shown by UPI">
-      <label>Amount (₹)</label><input id="amountInp" type="number" placeholder="0">
-      <button class="btn" id="btnSend">Pay</button>
-      <button class="btn ghost" id="btnBackCall">Back to call</button>
-      <div id="payStatus" class="muted"></div>
+    <section id="view-pay" class="view" aria-labelledby="payTitle">
+      <div class="view__head"><button class="btn btn--ghost btn--icon" id="btnBackCall" type="button" aria-label="Back"><span id="icoBack"></span></button><h1 id="payTitle">Send money</h1></div>
+      <div class="view__body">
+        <div class="banner banner--info" id="payCallNote" hidden><span id="payCallIco"></span><div class="banner__body"><div class="banner__title">A call is in progress</div><div id="payCallText"></div></div></div>
+        <form id="payForm" novalidate>
+          <div class="field" id="fVpa"><label for="vpaInp">Payee UPI ID</label><input id="vpaInp" placeholder="name@bank" autocomplete="off" autocapitalize="none" spellcheck="false" inputmode="email" aria-describedby="vpaErr"><div class="field__error" id="vpaErr">Enter a UPI ID like name@bank</div></div>
+          <div class="field" id="fName"><label for="payeeNameInp">Payee name <span class="muted">(optional)</span></label><input id="payeeNameInp" placeholder="as shown by UPI" autocomplete="off"></div>
+          <div class="field" id="fAmt"><label for="amountInp">Amount</label><div class="input-affix"><span class="affix" aria-hidden="true">₹</span><input id="amountInp" placeholder="0" inputmode="decimal" autocomplete="off" aria-describedby="amtHint amtErr"></div><div class="field__hint" id="amtHint">Indian grouping, for example 2,50,000</div><div class="field__error" id="amtErr">Enter an amount greater than zero</div><div class="amount-preview" id="amountPreview" aria-live="polite"></div></div>
+        </form>
+        <div id="payStatus" class="banner banner--info" role="status" aria-live="polite" hidden><span class="spinner" aria-hidden="true"></span><div class="banner__body" id="payStatusText"></div></div>
+      </div>
+      <div class="view__foot"><button class="btn btn--primary btn--block btn--lg" id="btnSend" type="button"><span id="icoSend"></span>Pay</button></div>
     </section>
 
     <!-- HOLD / WARN -->
-    <section id="view-hold" class="view">
-      <div class="hold-head" id="holdHead"><div class="muted" style="color:#ffe">Rakshak</div><div class="big" id="holdTitle">Payment paused</div><div class="countdown" id="countdown">30:00</div><div id="holdSub" style="font-size:13px"></div></div>
-      <div class="spoken" id="spokenText"></div>
-      <h3>Why</h3><ul class="reasons" id="holdReasons"></ul>
-      <h3>Payee check</h3>
-      <div class="card kv" id="payeeCard"></div>
-      <div class="card" id="alertLine" style="display:none"></div>
-      <button class="btn ok" id="btnCancelPay">Cancel payment &amp; report</button>
-      <button class="btn secondary" id="btnTalk">Talk to Rakshak (voice)</button>
-      <button class="btn ghost" id="btnOverride">I know this person — pay anyway</button>
-      <div class="card" id="talkBox" style="display:none"><div class="muted">Rakshak conversation</div><div id="talkLog" class="transcript"></div><button class="btn ghost" id="btnTalkEnd">End conversation</button></div>
+    <section id="view-hold" class="view" aria-labelledby="holdTitle">
+      <div class="view__body" id="holdBody">
+        <div class="hero hero--hold" id="holdHead" role="alert">
+          <div class="hero__eyebrow"><span id="holdIco"></span><span>Rakshak</span></div>
+          <h1 class="hero__title" id="holdTitle">Payment paused for your safety</h1>
+          <div class="hero__sub" id="holdSub"></div>
+          <div class="hero__count" id="countdown" aria-live="off">30:00<small id="countdownLbl">until this hold expires</small></div>
+        </div>
+        <div class="visually-hidden" id="decisionLive" aria-live="assertive" role="alert"></div>
+
+        <figure class="quote" style="margin:0"><blockquote id="spokenText" style="margin:0"></blockquote><figcaption class="quote__meta"><span>What Rakshak said to you</span><button class="btn btn--secondary btn--sm" id="btnReplayVoice" type="button"><span id="icoVoice"></span>Play again</button></figcaption></figure>
+
+        <h2 style="font-size:var(--fs-lg)">What Rakshak found</h2>
+        <div class="card" id="evCall" aria-labelledby="evCallTitle">
+          <div class="card__title" id="evCallTitle"><span id="evCallIco"></span>The call</div>
+          <div class="chips" id="holdChips"></div>
+          <ul class="safe-list" id="holdReasons" style="margin-top:8px"></ul>
+        </div>
+        <div class="card" id="evPayee" aria-labelledby="evPayeeTitle">
+          <div class="between"><div class="card__title" id="evPayeeTitle" style="margin:0"><span id="evPayeeIco"></span>The payee</div><span class="pill" id="payeeBand">–</span></div>
+          <div class="small muted mono" id="payeeVpa" style="margin:4px 0 8px"></div>
+          <dl class="kv" id="payeeCard"></dl>
+          <div class="small muted" id="payeeLineage" style="margin-top:10px"></div>
+        </div>
+        <div class="card" id="alertLine" hidden><div class="card__title"><span id="alertIco"></span>Trusted contact</div><div id="alertText"></div></div>
+
+        <div class="card" id="talkBox" hidden aria-labelledby="talkTitle">
+          <div class="between"><div class="card__title" id="talkTitle" style="margin:0"><span id="talkIco"></span>Talking to Rakshak</div><span class="pill pill--live" id="talkPill"><span class="dot"></span>live</span></div>
+          <div class="tr tr--scroll" id="talkLog" style="margin-top:8px" aria-live="polite"></div>
+          <div class="banner banner--warn" id="talkError" hidden style="margin-top:8px"><span id="talkErrIco"></span><div class="banner__body" id="talkErrorText"></div></div>
+          <button class="btn btn--secondary btn--block" id="btnTalkEnd" type="button" style="margin-top:10px">End conversation</button>
+        </div>
+      </div>
+      <div class="view__foot">
+        <div class="stack-sm">
+          <button class="btn btn--safe btn--block btn--lg" id="btnCancelPay" type="button"><span id="icoCancel"></span>Cancel payment &amp; report</button>
+          <button class="btn btn--secondary btn--block" id="btnTalk" type="button"><span id="icoTalk"></span>Talk to Rakshak</button>
+          <button class="btn btn--ghost btn--block btn--sm" id="btnOverride" type="button">I know this person — pay anyway</button>
+        </div>
+      </div>
     </section>
 
     <!-- DONE -->
-    <section id="view-done" class="view">
-      <h1 id="doneTitle">Done</h1>
-      <div class="card" id="doneBody"></div>
-      <button class="btn" id="btnHome">Back to home</button>
+    <section id="view-done" class="view" aria-labelledby="doneTitle">
+      <div class="view__body">
+        <div class="hero hero--proceed" id="doneHead" role="status"><div class="hero__eyebrow"><span id="doneIco"></span><span>SafePay</span></div><h1 class="hero__title" id="doneTitle">Done</h1><div class="hero__sub" id="doneSub"></div></div>
+        <div class="card" id="doneBody"></div>
+      </div>
+      <div class="view__foot"><button class="btn btn--primary btn--block" id="btnHome" type="button">Back to home</button></div>
     </section>
 
-    <div class="toast" id="toast"></div>
-    <div class="modal" id="confirmModal"><div class="card">
-      <h2>Are you sure?</h2>
-      <div class="muted" id="confirmText"></div>
-      <label>Type the amount to confirm</label><input id="confirmAmount" placeholder="e.g. 200000">
-      <div class="row"><button class="btn ghost" id="btnConfirmNo">Go back</button><button class="btn danger" id="btnConfirmYes">Pay anyway</button></div>
-    </div></div>
-  </div></div>
+    <!-- DRILL -->
+    <section id="view-drill" class="view" aria-labelledby="drillTitle">
+      <div class="view__head"><button class="btn btn--ghost btn--icon" id="btnDrillBack" type="button" aria-label="Back"><span id="icoDrillBack"></span></button><h1 id="drillTitle">Practice drill</h1></div>
+      <div class="view__body">
+        <div id="drillSetup">
+          <div class="banner banner--info"><span id="drillInfoIco"></span><div class="banner__body"><div class="banner__title">Safe practice, no real money</div>Rakshak plays a scam call. At each pressure point it pauses and asks what you would do. You get coaching at the end.</div></div>
+          <div class="field" style="margin-top:12px"><label for="drillScriptSel">Choose a call</label><select id="drillScriptSel"></select></div>
+          <button class="btn btn--primary btn--block btn--lg" id="btnDrillStart" type="button"><span id="icoDrillStart"></span>Start the drill</button>
+        </div>
+        <div id="drillRun" hidden>
+          <div class="card">
+            <div class="between"><div class="card__title" style="margin:0">Scam risk</div><span class="pill" id="drillStagePill">playing</span></div>
+            <div class="meter meter--low" style="margin-top:8px" role="meter" aria-label="Scam risk" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="drillMeter"><div class="meter__fill" id="drillMeterFill"></div></div>
+            <div class="small muted" id="drillRiskText" aria-live="polite">0% · low</div>
+          </div>
+          <div class="card" id="drillChoice" hidden role="group" aria-labelledby="drillQ">
+            <div class="card__title" id="drillQ"><span id="drillQIco"></span>What would you do?</div>
+            <div class="small muted" id="drillMarkerText" style="margin-bottom:8px"></div>
+            <div class="stack-sm" id="drillChoices"></div>
+            <div class="banner" id="drillFeedback" hidden style="margin-top:10px"><span id="drillFbIco"></span><div class="banner__body" id="drillFeedbackText"></div></div>
+          </div>
+          <div class="card" style="margin-top:12px"><div class="card__title">The call</div><div class="tr tr--scroll" id="drillTranscript"></div></div>
+          <button class="btn btn--ghost btn--block" id="btnDrillStop" type="button">Stop drill</button>
+        </div>
+        <div id="drillSummary" hidden>
+          <div class="hero hero--proceed" id="drillHero"><div class="hero__eyebrow"><span id="drillSumIco"></span><span>Drill complete</span></div><div class="drill-score" id="drillScore">0 / 0</div><div class="hero__sub" id="drillScoreSub"></div></div>
+          <div class="card" style="margin-top:12px"><div class="card__title" id="drillCoachTitle">What Rakshak noticed in this call</div><ul class="safe-list" id="drillCoach"></ul></div>
+          <div class="card" style="margin-top:12px"><div class="card__title">Your answers</div><ol class="safe-list" id="drillAnswers"></ol></div>
+          <div class="btn-row" style="margin-top:12px"><button class="btn btn--primary" id="btnDrillAgain" type="button">Try another</button><button class="btn btn--secondary" id="btnDrillHome" type="button">Home</button></div>
+        </div>
+      </div>
+    </section>
 
-  <div class="side">
-    <div class="card"><b>Rakshak — scam-moment interception</b><div class="muted">This phone is the customer's bank app. Join as the scammer from <a id="scammerLink2" target="_blank">/scammer</a> (another device or tab), or auto-play a script. The payment screen is where Rakshak acts.</div></div>
-    <div class="card"><h3>Event log</h3><div class="log" id="log"></div></div>
-  </div>
+    <!-- ONBOARDING SHEET -->
+    <div class="sheet" id="onboardSheet" role="dialog" aria-modal="true" aria-labelledby="obTitle">
+      <div class="sheet__panel">
+        <div class="sheet__grab" aria-hidden="true"></div>
+        <div class="stepper" aria-hidden="true" id="obStepper"><span class="is-done"></span><span></span><span></span></div>
+        <div class="visually-hidden" id="obStepLive" aria-live="polite"></div>
+        <div class="onboard-step is-active" data-step="1">
+          <h2 class="sheet__title" id="obTitle" style="margin-top:12px">Rakshak looks after your money</h2>
+          <p>When you are on a call and someone pushes you to pay, Rakshak notices the pressure, pauses the payment and speaks to you in your language.</p>
+          <div class="list">
+            <div class="row"><span class="row__lead" id="obIco1"></span><div class="row__main"><div class="row__title">Listens only during calls</div><div class="row__sub">Never otherwise. A visible indicator shows when it is on.</div></div></div>
+            <div class="row"><span class="row__lead" id="obIco2"></span><div class="row__main"><div class="row__title">Pauses risky payments</div><div class="row__sub">Thirty minutes to think. You can always cancel, or confirm by typing the amount.</div></div></div>
+            <div class="row"><span class="row__lead" id="obIco3"></span><div class="row__main"><div class="row__title">Tells someone you trust</div><div class="row__sub">Only when a payment is paused, never before.</div></div></div>
+          </div>
+        </div>
+        <div class="onboard-step" data-step="2">
+          <h2 class="sheet__title" style="margin-top:12px">How much should Rakshak hear?</h2>
+          <p class="small muted">Choose your privacy level. You can change it any time.</p>
+          <div class="tier" role="radiogroup" aria-label="Privacy tier">
+            <label class="choice"><input type="radio" name="tier" value="0"><div><div class="choice__title">Tier 0 · No audio</div><div class="choice__desc">Rakshak only knows that a call is on and checks the payee when you pay. Nothing is recorded.</div></div></label>
+            <label class="choice"><input type="radio" name="tier" value="1"><div><div class="choice__title">Tier 1 · On this phone only</div><div class="choice__desc">The call is written down on your phone. Nothing leaves it until you try to pay.</div></div></label>
+            <label class="choice"><input type="radio" name="tier" value="2" checked><div><div class="choice__title">Tier 2 · Cloud analysis (this demo)</div><div class="choice__desc">The call is analysed on the bank's servers as it happens, so Rakshak can warn you before you pay. Audio is not kept.</div></div></label>
+          </div>
+        </div>
+        <div class="onboard-step" data-step="3">
+          <h2 class="sheet__title" style="margin-top:12px">Who should Rakshak tell?</h2>
+          <div class="field"><label for="obContact">Trusted contact</label><input id="obContact" placeholder="e.g. Priya (daughter)" autocomplete="off"><div class="field__hint">They are told only when a payment is paused.</div></div>
+          <div class="field"><label for="obLang">Rakshak speaks to you in</label>
+            <select id="obLang"><option value="hi">Hindi · हिन्दी</option><option value="hinglish">Hinglish</option><option value="en">English</option><option value="en-sg">English (Singapore)</option><option value="kn">Kannada · ಕನ್ನಡ</option><option value="ta">Tamil · தமிழ்</option></select></div>
+          <label class="check"><input type="checkbox" id="obGuardian" checked><span><b>Turn Guardian mode on</b><br><span class="small muted">Opt-in. Rakshak listens to calls on this device only while Guardian mode is on.</span></span></label>
+        </div>
+        <div class="btn-row" style="margin-top:16px"><button class="btn btn--secondary" id="obBack" type="button">Back</button><button class="btn btn--primary" id="obNext" type="button">Next</button></div>
+      </div>
+    </div>
+
+    <!-- OVERRIDE CONFIRMATION SHEET -->
+    <div class="sheet" id="confirmSheet" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <div class="sheet__panel">
+        <div class="sheet__grab" aria-hidden="true"></div>
+        <div class="banner banner--hold"><span id="confirmIco"></span><div class="banner__body"><div class="banner__title" id="confirmTitle">Rakshak believes this is a scam</div><div id="confirmText"></div></div></div>
+        <div class="field" style="margin-top:14px" id="fConfirm"><label for="confirmAmount">Type the exact amount to confirm you want to pay</label><div class="input-affix"><span class="affix" aria-hidden="true">₹</span><input id="confirmAmount" inputmode="decimal" placeholder="e.g. 2,50,000" autocomplete="off" aria-describedby="confirmErr"></div><div class="field__error" id="confirmErr">That is not the amount of this payment</div></div>
+        <div class="btn-row"><button class="btn btn--safe" id="btnConfirmNo" type="button">Keep it paused</button><button class="btn btn--danger" id="btnConfirmYes" type="button">Pay anyway</button></div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </main></div>
+
+  <aside class="side" aria-label="Demo notes">
+    <div class="card"><div class="brand"><span class="mark" id="brandIco"></span>Rakshak</div><p class="small muted" style="margin-top:8px">This phone is the customer's bank app. Join as the caller from <a id="scammerLink2" target="_blank" rel="noopener">/scammer</a> on another device or tab, or auto-play a script. The payment screen is where Rakshak acts.</p>
+      <div class="small muted">Fraud desk: <a href="/desk" target="_blank" rel="noopener">/desk</a></div></div>
+    <div class="card"><div class="card__title">Event log</div><div class="log" id="log" aria-live="off"></div></div>
+  </aside>
 </div>
 <script src="/static/common.js"></script>
 <script src="/static/app.js"></script>

@@ -1,61 +1,170 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Rakshak · caller console</title><link rel="stylesheet" href="/static/styles.css"></head>
+<html lang="en" data-app="operator">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Rakshak · caller console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
 <body>
-<div class="stage">
-  <div class="side">
-    <div class="card"><h1 style="margin:0">Caller console</h1><div class="muted">You play the scammer (or a legitimate caller). Join the victim's session, then either speak into your mic or click lines from a script; the victim's phone hears your voice and Rakshak transcribes it.</div></div>
-    <div class="card"><label>Session id</label><div class="row"><input id="sidInp" placeholder="from the victim phone"><button class="btn" id="btnJoin" style="width:140px">Join</button></div>
-      <div class="row"><button class="btn secondary" id="btnMic">Start my mic</button><button class="btn ghost" id="btnHangup">Hang up</button></div>
-      <div class="muted" id="status">not connected</div></div>
-    <div class="card"><label>Say something as the caller (typed)</label><div class="row"><input id="sayInp" placeholder="Type a line…"><button class="btn" id="btnSay" style="width:120px">Say (TTS)</button></div><label><input type="checkbox" id="voiceChk" checked style="width:auto;margin-right:6px">Voice the line on the victim's phone</label></div>
-    <div class="card"><h3>Live risk on the victim's phone</h3><div class="meter"><div id="riskBar"></div></div><div id="riskText" class="muted">0%</div><div class="transcript" id="transcript" style="max-height:140px"></div></div>
-  </div>
-  <div class="side">
-    <div class="card"><label>Script</label><select id="scriptSel"></select>
-      <div class="row"><button class="btn" id="btnAuto">Auto-play whole script</button><button class="btn ghost" id="btnStop">Stop</button></div>
-      <div class="muted" id="scriptMeta"></div></div>
-    <div class="card lines" id="lines"></div>
-  </div>
+<div class="op">
+  <aside class="op__col" aria-label="Session and microphone">
+    <div class="op__header"><div class="brand"><span class="mark" id="brandIco"></span>Caller console</div><span class="pill pill--outline">operator</span></div>
+    <p class="small muted" style="margin:0">You play the scammer (or a legitimate caller). Join the victim's session, then speak into your mic or click lines from a script. The victim's phone hears your voice and Rakshak transcribes it.</p>
+
+    <section class="card" aria-labelledby="joinTitle">
+      <div class="card__title" id="joinTitle"><span id="joinIco"></span>Session</div>
+      <form id="joinForm" class="field" style="margin:0">
+        <label for="sidInp">Session id (shown on the victim phone)</label>
+        <div class="btn-row" style="align-items:stretch"><input id="sidInp" placeholder="e.g. 3f9a1c2b" autocomplete="off" spellcheck="false" style="flex:1"><button class="btn btn--primary" id="btnJoin" type="submit" style="flex:0 0 auto">Join</button></div>
+      </form>
+      <div class="cluster" style="margin-top:10px"><span class="pill" id="connPill" role="status" aria-live="polite"><span class="dot"></span>not connected</span><span class="pill pill--outline" id="victimPill" hidden>victim online</span></div>
+      <div class="small muted" id="status" aria-live="polite" style="margin-top:6px">Enter the session id to begin.</div>
+    </section>
+
+    <section class="card" aria-labelledby="micTitle">
+      <div class="card__title" id="micTitle"><span id="micIco"></span>Your microphone</div>
+      <div class="vu" id="vu" role="meter" aria-label="Microphone level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="small muted" id="vuText" style="margin-top:6px">Mic off</div>
+      <div class="btn-row" style="margin-top:10px"><button class="btn btn--secondary" id="btnMic" type="button" aria-pressed="false"><span id="btnMicIco"></span>Start my mic</button><button class="btn btn--danger" id="btnHangup" type="button"><span id="hangIco"></span>Hang up</button></div>
+      <div class="banner banner--warn" id="micBanner" hidden style="margin-top:10px"><span id="micWarnIco"></span><div class="banner__body" id="micBannerText"></div></div>
+    </section>
+
+    <section class="card" aria-labelledby="sayTitle">
+      <div class="card__title" id="sayTitle"><span id="sayIco"></span>Say a line (typed)</div>
+      <form id="sayForm" class="field" style="margin:0"><label for="sayInp">Caller says</label>
+        <div class="btn-row" style="align-items:stretch"><input id="sayInp" placeholder="Type a line…" autocomplete="off" style="flex:1"><button class="btn btn--primary" id="btnSay" type="submit" style="flex:0 0 auto">Say</button></div></form>
+      <label class="check" style="margin-top:4px"><input type="checkbox" id="voiceChk" checked><span>Voice the line on the victim's phone (Gemini TTS)</span></label>
+    </section>
+
+    <section class="card" aria-labelledby="mirrorTitle">
+      <div class="between"><div class="card__title" id="mirrorTitle" style="margin:0"><span id="mirrorIco"></span>Victim's phone (live mirror)</div><span class="pill" id="stagePill">waiting</span></div>
+      <div class="gauge gauge--low gauge--sm" id="riskGauge" style="margin-top:8px">
+        <svg class="gauge__svg" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="gauge__track" cx="60" cy="60" r="46"/>
+          <circle class="gauge__arc" id="riskArc" cx="60" cy="60" r="46" stroke-dasharray="289.03" stroke-dashoffset="289.03" transform="rotate(-90 60 60)"/>
+          <text class="gauge__pct" x="60" y="58" text-anchor="middle" dominant-baseline="middle" id="riskPct">0%</text>
+          <text class="gauge__lbl" x="60" y="78" text-anchor="middle">RISK</text>
+        </svg>
+        <div class="gauge__text"><div class="gauge__band" id="riskBand">Low</div><div class="small muted" id="riskText" role="status" aria-live="polite">No analysis yet</div></div>
+      </div>
+      <div class="chips" id="signalChips" style="margin-top:8px"></div>
+      <div class="tr tr--scroll" id="transcript" style="margin-top:10px;max-height:200px"><div class="empty small">Transcript appears here as Rakshak hears the call.</div></div>
+      <div class="banner banner--hold" id="decisionBanner" hidden style="margin-top:10px"><span id="decIco"></span><div class="banner__body" id="decisionText"></div></div>
+    </section>
+  </aside>
+
+  <main class="op__col" aria-label="Script">
+    <section class="card" aria-labelledby="scriptTitle">
+      <div class="between" style="flex-wrap:wrap"><div class="card__title" id="scriptTitle" style="margin:0"><span id="scriptIco"></span>Script</div><span class="pill pill--outline" id="progressPill">0 / 0 lines</span></div>
+      <div class="field" style="margin-top:8px"><label for="scriptSel">Choose a script</label><select id="scriptSel"></select></div>
+      <div class="small muted" id="scriptMeta"></div>
+      <div class="btn-row" style="margin-top:10px"><button class="btn btn--primary" id="btnAuto" type="button"><span id="autoIco"></span>Auto-play to the payment demand</button><button class="btn btn--secondary" id="btnStop" type="button"><span id="stopIco"></span>Stop</button></div>
+      <div class="small muted" style="margin-top:8px">Click <b>Say</b> on any line to voice it on the victim's phone. The line that was just said is highlighted; lines already said are dimmed.</div>
+    </section>
+    <section class="card" aria-labelledby="linesTitle">
+      <div class="card__title" id="linesTitle">Lines</div>
+      <div class="steps" id="lines" role="list"></div>
+    </section>
+  </main>
 </div>
+<div class="toast toast--fixed" id="toast" role="status" aria-live="polite"></div>
 <script src="/static/common.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
-const C = { sid: null, ws: null, ev: null, mic: null, player: new Player(), script: null };
+const C = { sid: null, ws: null, ev: null, mic: null, player: new Player(), script: null, said: new Set(), current: null };
+const SIGNAL_LABELS = { authority_impersonation: 'authority', secrecy: 'secrecy', urgency: 'urgency', remote_app_install: 'remote app', safe_account: 'safe account', investment_pressure: 'investment', otp_or_credential_request: 'OTP / PIN', threat_of_arrest_or_harm: 'threat' };
+[['brandIco', 'phone'], ['joinIco', 'link'], ['micIco', 'mic'], ['btnMicIco', 'mic'], ['hangIco', 'phoneOff'], ['micWarnIco', 'warn'], ['sayIco', 'message'], ['mirrorIco', 'shield'], ['decIco', 'hand'], ['scriptIco', 'list'], ['autoIco', 'play'], ['stopIco', 'stop']].forEach(([id, n]) => { $(id).innerHTML = icon(n); });
+function toast(msg) { const el = $('toast'); el.textContent = msg; el.classList.add('is-open'); clearTimeout(el._h); el._h = setTimeout(() => el.classList.remove('is-open'), 2600); }
 function status(t) { $('status').textContent = t; }
+function setConn(state, text) { const p = $('connPill'); p.className = 'pill ' + (state === 'on' ? 'pill--live' : state === 'bad' ? 'pill--hold' : ''); p.innerHTML = `<span class="dot"></span>${esc(text)}`; }
+
 async function loadScripts() {
   const list = await api('/api/scripts');
   $('scriptSel').innerHTML = list.map(s => `<option value="${s.id}">${esc(s.title)} · ${s.language} · ${s.expected_outcome}</option>`).join('');
   $('scriptSel').onchange = loadScript; if (list.length) await loadScript();
 }
 async function loadScript() {
-  C.script = await api('/api/scripts/' + $('scriptSel').value);
-  const p = C.script.payment_attempt; $('scriptMeta').textContent = `${C.script.scam_type || 'benign'} · ${C.script.duration_sec}s · payment: ${p ? p.vpa + ' ' + fmtINR(p.amount_inr) : 'none'} · ${C.script.stage_directions || ''}`;
-  $('lines').innerHTML = C.script.lines.map(l => `<div class="line ${l.speaker}"><span class="n">${l.n}</span><div><div>${esc(l.text)}</div>${l.text_en && l.text_en !== l.text ? `<div class="muted">${esc(l.text_en)}</div>` : ''}</div>${l.marker ? `<span class="pill bad mk">${l.marker}</span>` : ''}${l.speaker === 'caller' ? `<button data-n="${l.n}">Say</button>` : `<button data-n="${l.n}" class="u">User says</button>`}</div>`).join('');
+  C.script = await api('/api/scripts/' + $('scriptSel').value); C.said = new Set(); C.current = null;
+  const p = C.script.payment_attempt;
+  $('scriptMeta').innerHTML = `<b>${esc(C.script.scam_type || 'benign')}</b> · ~${C.script.duration_sec}s · payment: ${p ? esc(p.vpa) + ' ' + fmtINR(p.amount_inr) : 'none'}${C.script.stage_directions ? `<details class="collapse" style="margin-top:8px"><summary>Stage directions</summary><div class="collapse__body small">${esc(C.script.stage_directions)}</div></details>` : ''}`;
+  $('lines').innerHTML = C.script.lines.map(l => `<div class="step ${l.speaker === 'user' ? 'step--user' : ''}" role="listitem" data-n="${l.n}"><span class="step__n">${l.n}</span><div class="step__text"><div>${esc(l.text)}</div>${l.text_en && l.text_en !== l.text ? `<div class="step__en">${esc(l.text_en)}</div>` : ''}</div><div class="step__trail">${l.marker ? `<span class="chip ${l.marker === 'payment_demand' ? '' : 'chip--warn'}">${esc(l.marker.replace(/_/g, ' '))}</span>` : ''}<button class="btn btn--sm ${l.speaker === 'caller' ? 'btn--primary' : 'btn--secondary'}" data-n="${l.n}" type="button" aria-label="${l.speaker === 'caller' ? 'Say line' : 'User says line'} ${l.n}">${l.speaker === 'caller' ? 'Say' : 'User says'}</button></div></div>`).join('');
   $('lines').querySelectorAll('button').forEach(b => b.onclick = () => sayLine(Number(b.dataset.n)));
+  updateProgress();
 }
-async function sayLine(n) { const l = C.script.lines.find(x => x.n === n); if (!C.sid) return status('join a session first'); await api(`/api/sessions/${C.sid}/say`, 'POST', { text: l.text, speaker: l.speaker, voice: $('voiceChk').checked }); }
+function updateProgress() { if (!C.script) return; $('progressPill').textContent = `${C.said.size} / ${C.script.lines.length} lines`; }
+function markSaid(n) {
+  if (!C.script) return; C.said.add(n); C.current = n;
+  $('lines').querySelectorAll('.step').forEach(el => { const k = Number(el.dataset.n); el.classList.toggle('is-said', C.said.has(k) && k !== n); el.classList.toggle('is-current', k === n); });
+  const cur = $('lines').querySelector(`.step[data-n="${n}"]`); if (cur) cur.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  updateProgress();
+}
+function matchLine(turn) { if (!C.script) return null; const txt = (turn.text || '').trim(); const l = C.script.lines.find(x => x.speaker === turn.speaker && x.text.trim() === txt && !C.said.has(x.n)) || C.script.lines.find(x => x.speaker === turn.speaker && x.text.trim() === txt); return l ? l.n : null; }
+async function sayLine(n) {
+  const l = C.script.lines.find(x => x.n === n); if (!C.sid) { status('Join a session first.'); $('sidInp').focus(); return; }
+  try { await api(`/api/sessions/${C.sid}/say`, 'POST', { text: l.text, speaker: l.speaker, voice: $('voiceChk').checked }); markSaid(n); } catch (e) { toast('Could not send the line: ' + e.message); }
+}
+function addTurn(turn) {
+  const el = $('transcript'); const empty = el.querySelector('.empty'); if (empty) empty.remove();
+  const d = document.createElement('div'); d.className = 'tr__turn tr__turn--' + (turn.speaker === 'caller' ? 'caller' : turn.speaker === 'user' ? 'user' : 'rakshak');
+  d.innerHTML = `<span class="tr__who">${turn.speaker === 'caller' ? 'Caller' : turn.speaker === 'user' ? 'Victim' : 'Rakshak'}</span><span class="tr__text">${esc(turn.text)}</span>`; el.appendChild(d); el.scrollTop = el.scrollHeight;
+}
+function renderRisk(r) {
+  const pct = Math.round(r.risk_score * 100), band = riskBand(r.risk_score), C0 = 289.03;
+  $('riskArc').style.strokeDashoffset = String(C0 * (1 - pct / 100)); $('riskPct').textContent = pct + '%';
+  $('riskGauge').className = 'gauge gauge--sm gauge--' + band; $('riskBand').textContent = { low: 'Low', elevated: 'Elevated', high: 'High' }[band];
+  $('riskText').textContent = `${pct}% · ${r.stage} · ${r.scam_type} · ${r.latency_ms} ms`;
+  $('stagePill').textContent = (r.stage || '').replace(/_/g, ' '); $('stagePill').className = 'pill ' + (band === 'high' ? 'pill--hold' : band === 'elevated' ? 'pill--warn' : 'pill--ok');
+  const on = Object.entries(r.signals || {}).filter(([, v]) => v);
+  $('signalChips').innerHTML = on.length ? on.map(([k]) => `<span class="chip">${SIGNAL_LABELS[k] || k}</span>`).join('') : '<span class="chip chip--ok">no coercion signals</span>';
+}
 function join() {
-  C.sid = $('sidInp').value.trim(); if (!C.sid) return;
+  C.sid = $('sidInp').value.trim(); if (!C.sid) { $('sidInp').focus(); return; }
   C.player.ensure();
-  if (C.ev) C.ev.close();
+  if (C.ev) C.ev.close(); if (C.ws) C.ws.close();
+  setConn('', 'connecting'); $('transcript').innerHTML = '<div class="empty small">Transcript appears here as Rakshak hears the call.</div>'; $('decisionBanner').hidden = true;
   C.ev = openWS(`/ws/events/${C.sid}`, { onJson: (e) => {
-    if (e.type === 'transcript') { const d = document.createElement('div'); d.className = 't ' + e.turn.speaker; d.textContent = `${e.turn.speaker}: ${e.turn.text}`; $('transcript').appendChild(d); $('transcript').scrollTop = 1e9; }
-    if (e.type === 'risk_update') { const r = e.rubric; $('riskBar').style.width = Math.round(r.risk_score * 100) + '%'; $('riskBar').style.background = riskColor(r.risk_score); $('riskText').textContent = `${Math.round(r.risk_score * 100)}% · ${r.stage} · ${r.scam_type}`; }
-    if (e.type === 'decision') status(`Rakshak decided: ${e.case.decision.action}`);
-    if (e.type === 'whisper') status('Rakshak whispered to the victim');
-  }});
-  C.ws = openWS(`/ws/call/${C.sid}/caller`, { onBinary: (buf) => C.player.play(new Int16Array(buf), 16000), onOpen: () => status('connected to session ' + C.sid + ' as caller'), onClose: () => status('disconnected') });
+    if (e.type === 'hello' && e.snapshot) { (e.snapshot.turns || []).forEach(addTurn); if (e.snapshot.rubric) renderRisk(e.snapshot.rubric); }
+    if (e.type === 'transcript') { addTurn(e.turn); const n = matchLine(e.turn); if (n != null) markSaid(n); }
+    if (e.type === 'risk_update') renderRisk(e.rubric);
+    if (e.type === 'whisper') { addTurn({ speaker: 'rakshak', text: e.text }); status('Rakshak whispered to the victim (you do not hear it).'); }
+    if (e.type === 'decision') { const d = e.case.decision; $('decisionBanner').hidden = false; $('decisionBanner').className = 'banner ' + (d.action === 'proceed' ? 'banner--ok' : d.action === 'warn' ? 'banner--warn' : 'banner--hold'); $('decisionText').innerHTML = `<b>Rakshak decided: ${esc(d.action.replace(/_/g, ' '))}</b> on ${fmtINR(e.case.payment.amount_inr)} to ${esc(e.case.payment.vpa)} (${esc(d.decided_by)})`; }
+    if (e.type === 'case_update') { const s = e.case.status; if (s === 'cancelled_by_user') toast('Victim cancelled the payment'); if (s === 'overridden_by_user') toast('Victim overrode the hold'); }
+    if (e.type === 'party_joined' && e.role === 'user') $('victimPill').hidden = false;
+    if (e.type === 'party_left' && e.role === 'user') $('victimPill').hidden = true;
+    if (e.type === 'replay_started') status(`Auto-playing “${e.title || e.script_id}”.`);
+    if (e.type === 'replay_paused') status('Auto-play paused at the payment demand. The victim should open UPI pay now.');
+    if (e.type === 'replay_finished') status('Script finished.');
+    if (e.type === 'replay_stopped') status('Auto-play stopped.');
+    if (e.type === 'call_ended') { setConn('', 'call ended'); status('The call ended.'); }
+  }, onClose: () => {} });
+  C.ws = openWS(`/ws/call/${C.sid}/caller`, { onBinary: (buf) => C.player.play(new Int16Array(buf), 16000), onOpen: () => { setConn('on', 'connected as caller'); status(`Connected to session ${C.sid}. Speak, or click a line.`); }, onClose: () => { setConn('bad', 'disconnected'); } });
+}
+function setVU(level) {
+  const bars = $('vu').children, n = Math.round(Math.min(1, level * 4.5) * bars.length);
+  for (let i = 0; i < bars.length; i++) bars[i].style.setProperty('--h', i < n ? '100%' : '0%');
+  $('vu').setAttribute('aria-valuenow', Math.round(Math.min(1, level * 4.5) * 100));
 }
 async function mic() {
-  if (C.mic) { C.mic.stop(); C.mic = null; $('btnMic').textContent = 'Start my mic'; return; }
-  C.mic = new Mic((i16) => { if (C.ws && C.ws.readyState === 1) C.ws.send(i16.buffer); }); await C.mic.start(); $('btnMic').textContent = 'Stop my mic'; status('mic streaming to victim + transcriber');
+  if (C.mic) { C.mic.stop(); C.mic = null; $('btnMic').innerHTML = icon('mic') + 'Start my mic'; $('btnMic').setAttribute('aria-pressed', 'false'); setVU(0); $('vuText').textContent = 'Mic off'; return; }
+  $('micBanner').hidden = true;
+  try {
+    C.mic = new Mic((i16) => { if (C.ws && C.ws.readyState === 1) C.ws.send(i16.buffer); setVU(rms16(i16)); });
+    await C.mic.start(); $('btnMic').innerHTML = icon('micOff') + 'Stop my mic'; $('btnMic').setAttribute('aria-pressed', 'true'); $('vuText').textContent = 'Streaming to the victim phone and the transcriber (16 kHz)'; status('Mic live.');
+  } catch (e) { C.mic = null; $('micBanner').hidden = false; $('micBannerText').textContent = e.kind === 'denied' ? 'Microphone permission denied. Allow it in the browser site settings, or use the Say buttons (the victim still hears a synthetic voice).' : 'Mic unavailable: ' + e.message + '. Use the Say buttons instead.'; }
 }
-$('btnJoin').onclick = join; $('btnMic').onclick = mic;
-$('btnHangup').onclick = () => { if (C.ws) C.ws.send(JSON.stringify({ type: 'end_call' })); if (C.mic) { C.mic.stop(); C.mic = null; } };
-$('btnSay').onclick = async () => { if (!C.sid) return status('join first'); await api(`/api/sessions/${C.sid}/say`, 'POST', { text: $('sayInp').value, speaker: 'caller', voice: $('voiceChk').checked }); $('sayInp').value = ''; };
-$('btnAuto').onclick = async () => { if (!C.sid) return status('join first'); await api(`/api/sessions/${C.sid}/replay`, 'POST', { script_id: $('scriptSel').value, voice: $('voiceChk').checked, pace: 1.0, stop_at_marker: 'payment_demand' }); status('auto-playing; stops at the payment demand'); };
-$('btnStop').onclick = async () => { if (C.sid) await api(`/api/sessions/${C.sid}/replay/stop`, 'POST'); };
+$('joinForm').onsubmit = (e) => { e.preventDefault(); join(); };
+$('btnMic').onclick = mic;
+$('btnHangup').onclick = () => { if (C.ws) C.ws.send(JSON.stringify({ type: 'end_call' })); if (C.mic) mic(); };
+$('sayForm').onsubmit = async (e) => { e.preventDefault(); if (!C.sid) { status('Join a session first.'); $('sidInp').focus(); return; } const text = $('sayInp').value.trim(); if (!text) return; try { await api(`/api/sessions/${C.sid}/say`, 'POST', { text, speaker: 'caller', voice: $('voiceChk').checked }); $('sayInp').value = ''; } catch (err) { toast('Could not send: ' + err.message); } };
+$('btnAuto').onclick = async () => { if (!C.sid) { status('Join a session first.'); $('sidInp').focus(); return; } try { await api(`/api/sessions/${C.sid}/replay`, 'POST', { script_id: $('scriptSel').value, voice: $('voiceChk').checked, pace: 1.0, stop_at_marker: 'payment_demand' }); status('Auto-playing; stops at the payment demand.'); } catch (e) { toast('Could not start: ' + e.message); } };
+$('btnStop').onclick = async () => { if (C.sid) { try { await api(`/api/sessions/${C.sid}/replay/stop`, 'POST'); } catch (e) {} } };
 if (qs('session')) { $('sidInp').value = qs('session'); }
-loadScripts().then(() => { if (qs('session')) join(); });
+loadScripts().then(() => { if (qs('session')) join(); }).catch(e => { status('Cannot reach the server: ' + e.message); setConn('bad', 'server unreachable'); });
 </script>
-</body></html>
+</body>
+</html>

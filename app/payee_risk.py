@@ -76,7 +76,7 @@ def lookup_payee(vpa: str) -> dict:
     if settings.bigquery_payee_table:
         row = _from_bigquery(vpa)
         if row is not None:
-            row["lineage"] = {"source": "bigquery", "table": settings.bigquery_payee_table, "formula": "sql/payee_risk.sql", "computed_at": _time.time()}
+            row["lineage"] = f"features from the BigQuery table {settings.bigquery_payee_table} (sql/payee_risk.sql)"
             return row
     base = _local_table().get(vpa)
     sim = simulator()
@@ -96,15 +96,17 @@ def lookup_payee(vpa: str) -> dict:
                 "formula": "sql/payee_risk.sql",
                 "tx_count_payee_7d": feats.get("tx_count_7d", 0),
                 "tx_in_window": len(sim.txs),
+                "n_transactions": len(sim.txs),
                 "computed_at": _time.time(),
+                "refreshed_at": sim.last_tick or sim.started_at,
                 "registry_fields": ["fri_level (DoT FRI, static demo)", "linked_complaints_1930 (I4C, static demo)", "kyc_tier"],
                 "sinks": sim.sinks,
             },
         }
         return row
     if base is not None:
-        return {**base, "source": "local_table", "lineage": {"source": "demo_risk_table", "computed_at": _time.time()}}
-    return {**UNKNOWN_TEMPLATE, "vpa": vpa, "lineage": {"source": "unknown_payee", "computed_at": _time.time()}}
+        return {**base, "source": "local_table", "lineage": "demo risk table (data/payees.json)"}
+    return {**UNKNOWN_TEMPLATE, "vpa": vpa, "lineage": "no history for this payee (thin file)"}
 
 
 def all_payees() -> list[dict]:

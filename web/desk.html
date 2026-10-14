@@ -1,52 +1,178 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Rakshak · fraud desk</title><link rel="stylesheet" href="/static/styles.css"></head>
+<html lang="en" data-app="operator">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Rakshak · fraud desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
 <body>
 <div class="desk">
-  <div class="list">
-    <div class="card"><h1 style="margin:0">Fraud desk</h1><div class="muted">Every intervention is a case with the call rubric, payee evidence, the agent trace and an auto-drafted 1930 referral.</div></div>
-    <div class="card"><h3>Live sessions</h3><div id="live" class="muted">none</div></div>
-    <div id="cases"></div>
-  </div>
-  <div id="detail"><div class="card muted">Select a case.</div></div>
+  <aside class="desk__list" aria-label="Cases and live sessions">
+    <div class="op__header"><div class="brand"><span class="mark" id="brandIco"></span>Fraud desk</div><span class="pill pill--outline" id="connPill" role="status" aria-live="polite"><span class="dot"></span>connecting</span></div>
+    <p class="small muted" style="margin:0">Every intervention is a case with the call rubric, payee evidence, the agent trace and an auto-drafted 1930 referral.</p>
+
+    <section class="card" aria-labelledby="liveTitle">
+      <div class="between"><div class="card__title" id="liveTitle" style="margin:0"><span id="liveIco"></span>Live sessions</div><span class="pill" id="liveCount">0</span></div>
+      <div id="live" style="margin-top:6px"><div class="empty small">No active calls.</div></div>
+    </section>
+
+    <section aria-labelledby="casesTitle">
+      <div class="between" style="margin-bottom:8px;flex-wrap:wrap"><h2 id="casesTitle" style="font-size:var(--fs-lg)">Cases <span class="muted small" id="caseCount"></span></h2></div>
+      <div class="seg" role="group" aria-label="Filter cases" id="filters" style="margin-bottom:10px">
+        <button type="button" data-f="all" aria-pressed="true">All</button>
+        <button type="button" data-f="on_hold" aria-pressed="false">On hold</button>
+        <button type="button" data-f="overridden_by_user" aria-pressed="false">Overridden</button>
+        <button type="button" data-f="cancelled_by_user" aria-pressed="false">Cancelled</button>
+      </div>
+      <div class="case-list" id="cases" role="listbox" aria-label="Cases"></div>
+    </section>
+  </aside>
+
+  <main class="desk__detail" id="detail" aria-live="polite"></main>
 </div>
+<div class="toast toast--fixed" id="toast" role="status" aria-live="polite"></div>
 <script src="/static/common.js"></script>
 <script>
-const $ = (id) => document.getElementById(id); let CASES = [], SEL = null; const LIVE = {};
-const badge = (s) => ({ on_hold: 'bad', overridden_by_user: 'warn', cancelled_by_user: 'on', approved: 'on', warned: 'warn', hold_expired: 'warn' }[s] || '');
-async function refresh() { CASES = await api('/api/cases'); renderList(); if (SEL) renderDetail(CASES.find(c => c.case_id === SEL) || null); }
-function renderList() { $('cases').innerHTML = CASES.map(c => `<div class="card ${c.case_id === SEL ? 'sel' : ''}" data-id="${c.case_id}"><div class="row" style="justify-content:space-between"><b>${fmtINR(c.payment.amount_inr)} → ${esc(c.payment.vpa)}</b><span class="pill ${badge(c.status)}">${c.status}</span></div><div class="muted">${new Date(c.created_at * 1000).toLocaleString()} · ${c.profile.name} · ${c.rubric.scam_type} · risk ${c.rubric.risk_score} · ${c.decision.action} (${c.decision.decided_by})</div></div>`).join('') || '<div class="card muted">No cases yet.</div>'; $('cases').querySelectorAll('.card').forEach(el => el.onclick = () => { SEL = el.dataset.id; renderList(); renderDetail(CASES.find(c => c.case_id === SEL)); }); }
-function kv(obj, keys) { return `<div class="kv">${keys.filter(k => obj[k] !== undefined).map(k => `<span class="muted">${k.replace(/_/g, ' ')}</span><span>${Array.isArray(obj[k]) ? esc(obj[k].join('; ')) : esc(obj[k])}</span>`).join('')}</div>`; }
-function renderDetail(c) {
-  if (!c) { $('detail').innerHTML = '<div class="card muted">Case not found.</div>'; return; }
-  const sig = Object.entries(c.rubric.signals || {}).filter(([, v]) => v).map(([k]) => `<span>${k.replace(/_/g, ' ')}</span>`).join('') || '<span style="background:rgba(48,164,108,.18);color:#9be0bd">no coercion signals</span>';
-  const trace = (c.trace || []).map(e => `<div class="ev ${e.type}"><b>${esc(e.agent || '')}</b> · ${e.type}${e.name ? ' · ' + esc(e.name) : ''}${e.args ? '<br><code>' + esc(JSON.stringify(e.args)).slice(0, 400) + '</code>' : ''}${e.result ? '<br><code>' + esc(JSON.stringify(e.result)).slice(0, 500) + '</code>' : ''}${e.text ? '<br>' + esc(e.text) : ''}</div>`).join('') || '<div class="muted">No agent trace (policy path).</div>';
-  const n = c.narrative;
-  $('detail').innerHTML = `
-    <div class="card"><div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">${c.case_id}</h2><span class="pill ${badge(c.status)}">${c.status}</span></div>
-      <div class="muted">${c.profile.name} (${c.profile.age_band}, ${c.profile.language}) · session ${c.session_id} · ${new Date(c.created_at * 1000).toLocaleString()}</div></div>
-    <div class="compare">
-      <div class="card"><h3>Decision</h3>${kv(c.decision, ['action', 'confidence', 'decided_by', 'hold_minutes', 'notify_trusted_contact', 'latency_ms'])}<ul class="reasons">${(c.decision.reasons || []).map(r => `<li>${esc(r)}</li>`).join('')}</ul><div class="spoken">${esc(c.decision.user_message || '')}</div></div>
-      <div class="card"><h3>Deterministic policy (safety net)</h3>${kv(c.policy || {}, ['score', 'action', 'call_risk', 'payee_risk'])}<ul class="reasons">${((c.policy || {}).reasons || []).map(r => `<li>${esc(r)}</li>`).join('')}</ul></div>
-    </div>
-    <div class="compare">
-      <div class="card"><h3>Call rubric</h3>${kv(c.rubric, ['scam_type', 'stage', 'risk_score', 'language', 'latency_ms', 'source'])}<div class="chips">${sig}</div><div class="muted" style="margin-top:6px">${esc(c.rubric.summary || '')}</div></div>
-      <div class="card"><h3>Payee evidence</h3>${kv(c.payee, ['vpa', 'risk_band', 'mule_risk_score', 'account_age_days', 'fan_in_48h', 'fan_out_48h', 'cash_out_ratio_7d', 'dormant_days_before_burst', 'fri_level', 'linked_complaints_1930', 'kyc_tier', 'source'])}<ul class="reasons">${(c.payee.reasons || []).map(r => `<li>${esc(r)}</li>`).join('')}</ul></div>
-    </div>
-    <div class="card"><h3>Agent trace (ADK)</h3><div class="trace">${trace}</div></div>
-    <div class="card"><h3>Fraud-desk record ${n ? '' : '<span class="spinner"></span>'}</h3>${n ? `<p>${esc(n.narrative)}</p><h3>1930 / ASCom referral</h3><div class="spoken">${esc(n.referral_text)}</div><h3>Evidence</h3><ul class="reasons">${(n.evidence_points || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul><h3>Recommended bank actions</h3><ul class="reasons">${(n.recommended_bank_actions || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul><h3>Customer follow-up</h3><div class="spoken">${esc(n.customer_followup_user_language)}</div>` : '<div class="muted">Generating…</div>'}</div>
-    <div class="compare">
-      <div class="card"><h3>What an SMS alert would have done</h3><div class="bad">"Dear customer, ₹${Number(c.payment.amount_inr).toLocaleString('en-IN')} debited to ${esc(c.payment.vpa)}."</div><div class="muted">Sent after the money left. Recovery in India averages ~24%; the mule account is usually empty within hours.</div></div>
-      <div class="card"><h3>What Rakshak did</h3><div class="good">${c.decision.action.replace(/_/g, ' ')} · spoke to the customer in ${c.profile.language} · ${c.alert ? 'alerted ' + esc(c.alert.contact_name) : 'no alert'} · case + referral drafted</div><div class="muted">Timeline: ${(c.timeline || []).map(t => `${new Date(t.t * 1000).toLocaleTimeString()} ${t.event}`).join(' → ')}</div></div>
-    </div>
-    <div class="card"><h3>Transcript excerpt</h3><div class="transcript" style="max-height:260px">${esc(c.transcript_excerpt || '').split('\n').map(l => `<div class="t ${l.startsWith('caller') ? 'caller' : 'user'}">${esc(l)}</div>`).join('')}</div></div>`;
+const $ = (id) => document.getElementById(id); let CASES = [], SEL = null, FILTER = 'all'; const LIVE = {};
+[['brandIco', 'shield'], ['liveIco', 'wave']].forEach(([id, n]) => { $(id).innerHTML = icon(n); });
+$('detail').innerHTML = `<div class="empty">${icon('list')}<div class="empty__title">Select a case</div><div class="small">Cases appear here the moment Rakshak intervenes on a payment.</div></div>`;
+const STATUS = { on_hold: ['pill--hold', 'hand', 'On hold'], overridden_by_user: ['pill--warn', 'warn', 'Overridden'], cancelled_by_user: ['pill--ok', 'shield', 'Cancelled'], approved: ['pill--ok', 'check', 'Approved'], warned: ['pill--warn', 'warn', 'Warned'], hold_expired: ['', 'clock', 'Hold expired'] };
+const SIGNAL_LABELS = { authority_impersonation: 'authority', secrecy: 'secrecy', urgency: 'urgency', remote_app_install: 'remote app', safe_account: 'safe account', investment_pressure: 'investment', otp_or_credential_request: 'OTP / PIN', threat_of_arrest_or_harm: 'threat' };
+const ACTION_PILL = { proceed: 'pill--ok', warn: 'pill--warn', hold: 'pill--hold', hold_and_alert: 'pill--hold' };
+function toast(msg) { const el = $('toast'); el.textContent = msg; el.classList.add('is-open'); clearTimeout(el._h); el._h = setTimeout(() => el.classList.remove('is-open'), 2600); }
+function statusPill(s) { const [cls, ic, label] = STATUS[s] || ['', 'info', s]; return `<span class="pill ${cls}">${icon(ic)}${esc(label)}</span>`; }
+function when(ts) { return new Date(ts * 1000).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }); }
+function at(ts) { return new Date(ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
+function kv(obj, keys) { return `<dl class="kv">${keys.filter(k => obj[k] !== undefined && obj[k] !== null).map(k => `<dt>${k.replace(/_/g, ' ')}</dt><dd>${Array.isArray(obj[k]) ? esc(obj[k].join('; ')) : esc(obj[k])}</dd>`).join('')}</dl>`; }
+function copyBtn(text, label = 'Copy') { return `<button class="btn btn--secondary btn--sm no-print" type="button" data-copy="${esc(text)}">${icon('copy')}${label}</button>`; }
+
+async function refresh() {
+  try { CASES = await api('/api/cases'); setConn('on', 'live'); } catch (e) { setConn('bad', 'server unreachable'); return; }
+  renderList(); if (SEL) renderDetail(CASES.find(c => c.case_id === SEL) || null);
 }
-function renderLive() { const rows = Object.values(LIVE); $('live').innerHTML = rows.length ? rows.map(s => `<div><b>${s.session_id}</b> · risk <span style="color:${riskColor(s.risk || 0)}">${Math.round((s.risk || 0) * 100)}%</span> · ${s.stage || ''} · ${s.turns || 0} turns</div>`).join('') : 'none'; }
-openWS('/ws/events/all', { onJson: (e) => {
-  if (e.type === 'hello') { (e.sessions || []).forEach(s => LIVE[s.session_id] = { session_id: s.session_id, risk: s.rubric ? s.rubric.risk_score : 0, stage: s.rubric ? s.rubric.stage : '', turns: s.turns }); renderLive(); }
-  if (e.type === 'risk_update') { LIVE[e.session_id] = { ...(LIVE[e.session_id] || {}), session_id: e.session_id, risk: e.rubric.risk_score, stage: e.rubric.stage }; renderLive(); }
-  if (e.type === 'transcript') { LIVE[e.session_id] = { ...(LIVE[e.session_id] || { session_id: e.session_id }), turns: ((LIVE[e.session_id] || {}).turns || 0) + 1 }; renderLive(); }
-  if (e.type === 'decision' || e.type === 'case_update') { SEL = SEL || e.case.case_id; refresh(); }
-}});
-refresh(); setInterval(refresh, 8000);
+function setConn(state, text) { const p = $('connPill'); p.className = 'pill ' + (state === 'on' ? 'pill--live' : state === 'bad' ? 'pill--hold' : 'pill--outline'); p.innerHTML = `<span class="dot"></span>${esc(text)}`; }
+function renderList() {
+  const rows = CASES.filter(c => FILTER === 'all' || c.status === FILTER);
+  $('caseCount').textContent = `(${rows.length}${FILTER === 'all' ? '' : ' of ' + CASES.length})`;
+  $('cases').innerHTML = rows.map(c => `<button class="case" type="button" role="option" aria-selected="${c.case_id === SEL}" data-id="${c.case_id}">
+      <div class="between"><span class="case__amt">${fmtINR(c.payment.amount_inr)} <span class="muted">→</span> ${esc(c.payment.vpa)}</span>${statusPill(c.status)}</div>
+      <div class="small muted" style="margin-top:4px">${when(c.created_at)} · ${esc(c.profile.name)} · ${esc((c.rubric.scam_type || 'none').replace(/_/g, ' '))}</div>
+      <div class="cluster small" style="margin-top:6px"><span class="pill ${ACTION_PILL[c.decision.action] || ''}">${esc(c.decision.action.replace(/_/g, ' '))}</span><span class="muted">risk ${Math.round(c.rubric.risk_score * 100)}% · ${esc(c.decision.decided_by.replace(/_/g, ' '))}</span></div>
+    </button>`).join('') || `<div class="empty">${icon('list')}<div class="empty__title">${FILTER === 'all' ? 'No cases yet' : 'Nothing matches this filter'}</div><div class="small">${FILTER === 'all' ? 'Run a scripted call on the customer app and tap Pay.' : 'Try another filter.'}</div></div>`;
+  $('cases').querySelectorAll('.case').forEach(el => el.onclick = () => { SEL = el.dataset.id; renderList(); renderDetail(CASES.find(c => c.case_id === SEL)); });
+}
+$('filters').querySelectorAll('button').forEach(b => b.onclick = () => { FILTER = b.dataset.f; $('filters').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false')); renderList(); });
+
+function timelineItem(t) {
+  const ev = t.event || '';
+  const cls = /cancel|notified/.test(ev) ? 'ok' : /override|expired|failed/.test(ev) ? 'warn' : /hold/.test(ev) ? 'bad' : 'info';
+  const label = ev.replace(/_/g, ' ').replace('fast path:', 'fast path → ').replace('agent:', 'agent → ');
+  const extra = [t.score != null ? `score ${t.score}` : '', t.latency_ms != null ? `${t.latency_ms} ms` : '', t.upgraded ? 'upgraded' : '', t.channels ? t.channels.join(', ') : '', t.reason ? esc(t.reason) : ''].filter(Boolean).join(' · ');
+  return `<li class="timeline__item timeline__item--${cls}"><span class="timeline__dot"></span><div class="timeline__t">${at(t.t)}</div><div class="timeline__title">${esc(label)}</div>${extra ? `<div class="small muted">${extra}</div>` : ''}</li>`;
+}
+function traceItem(e, i) {
+  const body = e.args ? JSON.stringify(e.args, null, 1) : e.result ? JSON.stringify(e.result, null, 1) : '';
+  const head = `<span class="pill ${e.type === 'tool_call' ? 'pill--info' : e.type === 'tool_result' ? 'pill--ok' : e.type === 'error' ? 'pill--hold' : 'pill--warn'}">${esc(e.type.replace('_', ' '))}</span><b>${esc(e.agent || '')}</b>${e.name ? `<code>${esc(e.name)}</code>` : ''}${e.t ? `<span class="muted small">${at(e.t)}</span>` : ''}`;
+  return `<li class="trace__item trace__item--${esc(e.type)}"><span class="trace__dot"></span><div class="trace__head">${head}</div>${e.text ? `<div class="small" style="margin-top:4px">${esc(e.text)}</div>` : ''}${body ? `<details class="collapse" style="margin-top:6px"><summary class="small">${e.type === 'tool_call' ? 'Arguments' : 'Result'} (${body.length} chars)</summary><div class="collapse__body"><pre class="trace__body">${esc(body)}</pre></div></details>` : ''}</li>`;
+}
+function lineageText(p) {
+  const L = p.lineage;
+  if (L) { if (typeof L === 'string') return L; const n = L.n_transactions ?? L.transactions ?? L.rows ?? L.n; const a = L.refreshed_at ?? L.refreshed ?? L.updated_at; const w = typeof a === 'number' ? relTime(a > 1e12 ? a / 1000 : a) : (a ? String(a) : 'recently'); return `features computed from ${n != null ? Number(n).toLocaleString('en-IN') : 'N'} transactions, refreshed ${w}`; }
+  if (p.source === 'bigquery') return 'features from the BigQuery payee risk table';
+  if (p.source === 'unknown') return 'no history for this payee (thin file): demo risk table';
+  return 'demo risk table (data/payees.json)';
+}
+function renderDetail(c) {
+  if (!c) { $('detail').innerHTML = `<div class="empty">${icon('xCircle')}<div class="empty__title">Case not found</div></div>`; return; }
+  const d = c.decision, pol = c.policy || {}, p = c.payee || {}, n = c.narrative, r = c.rubric || {};
+  const sig = Object.entries(r.signals || {}).filter(([, v]) => v).map(([k]) => `<span class="chip">${icon('alert')}${SIGNAL_LABELS[k] || k}</span>`).join('') || `<span class="chip chip--ok">${icon('check')}no coercion signals</span>`;
+  const upgraded = d.agent_status === 'upgraded';
+  const agentLine = d.agent_status === 'pending' ? `<span class="pill pill--info"><span class="spinner" style="width:12px;height:12px;border-width:2px"></span>agent running</span>` : d.agent_status === 'skipped' ? `<span class="pill">agent skipped (policy only)</span>` : d.agent_status === 'failed' ? `<span class="pill pill--warn">agent failed, policy stands</span>` : `<span class="pill ${upgraded ? 'pill--hold' : 'pill--ok'}">${icon(upgraded ? 'alert' : 'check')}agent ${esc(d.agent_status || '')}${d.policy_action && d.agent_action ? ` · policy ${esc(d.policy_action)} → agent ${esc(d.agent_action)}` : ''}</span>`;
+  const sms = `Dear customer, ₹${Number(c.payment.amount_inr).toLocaleString('en-IN')} debited to ${c.payment.vpa}. If not you, call 1930.`;
+  $('detail').innerHTML = `
+    <section class="card">
+      <div class="between" style="flex-wrap:wrap"><div><div class="eyebrow">Case</div><h2 class="mono" style="font-size:var(--fs-xl)">${esc(c.case_id)}</h2></div><div class="cluster">${statusPill(c.status)}<button class="btn btn--secondary btn--sm no-print" type="button" id="btnPrint">${icon('print')}Print case</button></div></div>
+      <div class="small muted" style="margin-top:6px">${esc(c.profile.name)} (${esc(c.profile.age_band)}, ${esc(c.profile.language)}) · session <code>${esc(c.session_id)}</code> · ${when(c.created_at)}</div>
+      <div class="cluster" style="margin-top:10px"><span class="pill ${ACTION_PILL[d.action] || ''}">${icon('hand')}${esc(d.action.replace(/_/g, ' '))}</span><span class="pill pill--outline">${fmtINR(c.payment.amount_inr)} → ${esc(c.payment.vpa)}</span>${c.alert ? `<span class="pill pill--info">${icon('bell')}${esc(c.alert.contact_name)} alerted</span>` : ''}${agentLine}</div>
+    </section>
+
+    <div class="compare">
+      <section class="card" aria-labelledby="tlTitle"><div class="card__title" id="tlTitle">${icon('clock')}Status timeline</div><ol class="timeline">${(c.timeline || []).map(timelineItem).join('')}</ol></section>
+      <section class="card" aria-labelledby="cmpTitle"><div class="card__title" id="cmpTitle">${icon('message')}SMS alert vs Rakshak</div>
+        <div class="banner banner--hold" style="margin-bottom:8px"><span>${icon('message')}</span><div class="banner__body"><div class="banner__title">What an SMS alert would have done</div><div>“${esc(sms)}”</div><div class="small" style="margin-top:4px">Sent after the money left. Recovery in India averages ~24%; the mule account is usually empty within hours.</div></div></div>
+        <div class="banner banner--ok"><span>${icon('shield')}</span><div class="banner__body"><div class="banner__title">What Rakshak did</div><div>${esc(d.action.replace(/_/g, ' '))} before the PIN · spoke to the customer in ${esc(c.profile.language)} · ${c.alert ? 'alerted ' + esc(c.alert.contact_name) : 'no alert'} · case and referral drafted${d.latency_ms ? ` · agent ${d.latency_ms} ms` : ''}</div></div></div>
+      </section>
+    </div>
+
+    <div class="compare">
+      <section class="card" aria-labelledby="decTitle"><div class="between"><div class="card__title" id="decTitle" style="margin:0">${icon('sparkles')}Decision (${esc(d.decided_by.replace(/_/g, ' '))})</div><span class="pill ${ACTION_PILL[d.action] || ''}">${esc(d.action.replace(/_/g, ' '))}</span></div>
+        <div style="margin-top:8px">${kv(d, ['confidence', 'hold_minutes', 'notify_trusted_contact', 'latency_ms', 'model'])}</div>
+        <ul class="small" style="margin-top:8px">${(d.reasons || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+        <div class="quote" style="margin-top:8px;font-size:var(--fs-sm)">${esc(d.user_message || '')}</div></section>
+      <section class="card" aria-labelledby="polTitle"><div class="between"><div class="card__title" id="polTitle" style="margin:0">${icon('bolt')}Deterministic policy (safety net)</div><span class="pill ${ACTION_PILL[pol.action] || ''}">${esc((pol.action || '').replace(/_/g, ' '))}</span></div>
+        <div style="margin-top:8px">${kv(pol, ['score', 'call_risk', 'payee_risk'])}</div>
+        <ul class="small" style="margin-top:8px">${(pol.reasons || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+        <div class="small muted" style="margin-top:8px">${pol.action === d.action ? 'Agent and policy agree.' : upgraded ? 'The agent upgraded the policy action with evidence.' : 'The policy floor applies: the agent can never relax below it.'}</div></section>
+    </div>
+
+    <div class="compare">
+      <section class="card" aria-labelledby="rubTitle"><div class="card__title" id="rubTitle">${icon('phone')}Call rubric</div>${kv(r, ['scam_type', 'stage', 'risk_score', 'language', 'latency_ms', 'source'])}<div class="chips" style="margin-top:8px">${sig}</div><p class="small muted" style="margin:8px 0 0">${esc(r.summary || '')}</p>
+        ${(r.reasons_user_language || []).length ? `<div class="eyebrow" style="margin-top:8px">In the customer's language</div><ul class="small">${r.reasons_user_language.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</section>
+      <section class="card" aria-labelledby="payTitle"><div class="between"><div class="card__title" id="payTitle" style="margin:0">${icon('database')}Payee evidence</div><span class="pill ${/critical|high/.test(p.risk_band || '') ? 'pill--hold' : p.risk_band === 'medium' ? 'pill--warn' : 'pill--ok'}">${esc(p.risk_band || 'unknown')} risk</span></div>
+        <div class="small mono muted" style="margin:4px 0 8px">${esc(p.vpa || c.payment.vpa)}${p.display_name ? ' · ' + esc(p.display_name) : ''}</div>
+        ${kv(p, ['mule_risk_score', 'account_age_days', 'fan_in_48h', 'fan_out_48h', 'inflow_48h_inr', 'cash_out_ratio_7d', 'dormant_days_before_burst', 'avg_ticket_inr', 'fri_level', 'linked_complaints_1930', 'kyc_tier'])}
+        <ul class="small" style="margin-top:8px">${(p.reasons || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+        <div class="small muted cluster" style="margin-top:8px">${icon('database')}<span>Lineage: ${esc(lineageText(p))}</span></div></section>
+    </div>
+
+    <section class="card" aria-labelledby="trTitle"><div class="between"><div class="card__title" id="trTitle" style="margin:0">${icon('tool')}Agent trace (ADK)</div><span class="pill pill--outline">${(c.trace || []).length} events</span></div>
+      ${(c.trace || []).length ? `<ol class="trace" style="margin-top:10px">${c.trace.map(traceItem).join('')}</ol>` : `<div class="empty small" style="margin-top:8px">${d.agent_status === 'pending' ? 'Agent running: the trace lands here when it finishes.' : 'No agent trace (policy path).'}</div>`}</section>
+
+    <section class="card" aria-labelledby="recTitle"><div class="card__title" id="recTitle">${icon('list')}Fraud-desk record ${n ? '' : '<span class="spinner" aria-label="generating"></span>'}</div>
+      ${n ? `<div class="copy-wrap"><pre>${esc(n.narrative)}</pre>${copyBtn(n.narrative)}</div>
+        <h3 style="font-size:var(--fs-md);margin-top:14px">1930 / ASCom referral</h3><div class="copy-wrap" style="margin-top:6px"><pre>${esc(n.referral_text)}</pre>${copyBtn(n.referral_text, 'Copy referral')}</div>
+        <div class="compare" style="margin-top:12px">
+          <div><div class="eyebrow">Evidence</div><ul class="small">${(n.evidence_points || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+          <div><div class="eyebrow">Recommended bank actions</div><ul class="small">${(n.recommended_bank_actions || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+        </div>
+        <div class="eyebrow" style="margin-top:12px">Customer follow-up (${esc(c.profile.language)})</div><div class="copy-wrap" style="margin-top:6px"><pre>${esc(n.customer_followup_user_language)}</pre>${copyBtn(n.customer_followup_user_language)}</div>` : '<div class="small muted">Generating the narrative and referral…</div>'}</section>
+
+    <section class="card" aria-labelledby="txTitle"><div class="card__title" id="txTitle">${icon('message')}Transcript excerpt</div><div class="tr" style="max-height:320px;overflow:auto">${esc(c.transcript_excerpt || '').split('\n').filter(Boolean).map(l => { const m = l.match(/^(caller|user):\s*(.*)$/i); const who = m ? m[1].toLowerCase() : 'system'; return `<div class="tr__turn tr__turn--${who}"><span class="tr__who">${who === 'caller' ? 'Caller' : who === 'user' ? 'Customer' : 'Note'}</span><span class="tr__text">${esc(m ? m[2] : l)}</span></div>`; }).join('') || '<div class="empty small">No transcript (payment without a call).</div>'}</div></section>`;
+  $('detail').querySelectorAll('[data-copy]').forEach(b => b.onclick = () => copyText(b.dataset.copy, b));
+  const pb = $('btnPrint'); if (pb) pb.onclick = () => window.print();
+}
+
+// ---------- live sessions with sparklines ----------
+function spark(hist) {
+  const pts = (hist || []).slice(-40); if (pts.length < 2) return '<svg class="spark" viewBox="0 0 120 32" aria-hidden="true"></svg>';
+  const w = 120, h = 32, step = w / (pts.length - 1);
+  const xy = pts.map((v, i) => [i * step, h - 2 - Math.max(0, Math.min(1, v)) * (h - 4)]);
+  const line = xy.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  const last = pts[pts.length - 1];
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" role="img" aria-label="risk over time, now ${Math.round(last * 100)} percent"><path class="spark__area" d="${line} L${w},${h} L0,${h} Z"/><path d="${line}" stroke="${riskColor(last)}"/></svg>`;
+}
+function renderLive() {
+  const rows = Object.values(LIVE).filter(s => s.state !== 'ended');
+  $('liveCount').textContent = rows.length;
+  $('live').innerHTML = rows.length ? rows.map(s => { const r = s.risk || 0, b = riskBand(r); return `<div class="live-row"><div><div class="cluster"><code>${esc(s.session_id)}</code><span class="pill ${b === 'high' ? 'pill--hold' : b === 'elevated' ? 'pill--warn' : 'pill--ok'}">${Math.round(r * 100)}% ${b}</span></div><div class="small muted">${esc(s.name || '')} · ${esc((s.stage || 'listening').replace(/_/g, ' '))} · ${s.turns || 0} turns</div></div>${spark(s.hist)}</div>`; }).join('') : '<div class="empty small">No active calls.</div>';
+}
+function connectLive() {
+  openWS('/ws/events/all', { onJson: (e) => {
+    if (e.type === 'hello') { (e.sessions || []).forEach(s => LIVE[s.session_id] = { session_id: s.session_id, name: s.profile && s.profile.name, state: s.state, risk: s.rubric ? s.rubric.risk_score : 0, stage: s.rubric ? s.rubric.stage : '', turns: s.turns, hist: (s.rubric_history || []).map(h => h.risk) }); renderLive(); setConn('on', 'live'); }
+    const L = () => LIVE[e.session_id] || (LIVE[e.session_id] = { session_id: e.session_id, hist: [], turns: 0 });
+    if (e.type === 'call_started') { const s = L(); s.state = 'active'; renderLive(); }
+    if (e.type === 'risk_update') { const s = L(); s.risk = e.rubric.risk_score; s.stage = e.rubric.stage; s.state = 'active'; s.hist = [...(s.hist || []), e.rubric.risk_score].slice(-60); renderLive(); }
+    if (e.type === 'transcript') { const s = L(); s.turns = (s.turns || 0) + 1; s.state = 'active'; renderLive(); }
+    if (e.type === 'call_ended') { const s = L(); s.state = 'ended'; renderLive(); }
+    if (e.type === 'decision' || e.type === 'case_update') { SEL = SEL || e.case.case_id; refresh(); if (e.type === 'decision') toast(`New case: ${e.case.decision.action.replace(/_/g, ' ')} on ${fmtINR(e.case.payment.amount_inr)}`); }
+  }, onClose: () => { setConn('bad', 'reconnecting'); setTimeout(connectLive, 2000); } });
+}
+connectLive(); refresh(); setInterval(refresh, 8000);
 </script>
-</body></html>
+</body>
+</html>
