@@ -1249,5 +1249,89 @@
       "Low cash-out; funds stay in the account",
       "Few payers; personal or landlord-style account"
     ]
+  },
+  {
+    "vpa": "refund.confirm.desk@rakshakdemo",
+    "display_name": "Refund Confirmation Desk",
+    "account_age_days": 31,
+    "fan_in_48h": 24,
+    "fan_out_48h": 4,
+    "inflow_48h_inr": 312000,
+    "cash_out_ratio_7d": 0.92,
+    "dormant_days_before_burst": 0,
+    "avg_ticket_inr": 13000,
+    "fri_level": "high",
+    "linked_complaints_1930": 2,
+    "kyc_tier": "min_kyc",
+    "mule_risk_score": 0.81,
+    "risk_band": "high",
+    "reasons": [
+      "2 cybercrime-helpline (1930) complaints name this payee",
+      "92% of inflow moved out within 7 days",
+      "Linked mobile carries telecom FRI 'high'"
+    ]
+  },
+  {
+    "vpa": "skillpath.training.kit@rakshakdemo",
+    "display_name": "SkillPath Training Kit",
+    "account_age_days": 27,
+    "fan_in_48h": 37,
+    "fan_out_48h": 5,
+    "inflow_48h_inr": 222000,
+    "cash_out_ratio_7d": 0.9,
+    "dormant_days_before_burst": 0,
+    "avg_ticket_inr": 6000,
+    "fri_level": "high",
+    "linked_complaints_1930": 2,
+    "kyc_tier": "min_kyc",
+    "mule_risk_score": 0.78,
+    "risk_band": "high",
+    "reasons": [
+      "2 cybercrime-helpline (1930) complaints name this payee",
+      "90% of inflow moved out within 7 days",
+      "Linked mobile carries telecom FRI 'high'"
+    ]
+  },
+  {
+    "vpa": "app.reverify.support@rakshakdemo",
+    "display_name": "App Re-verification Support",
+    "account_age_days": 13,
+    "fan_in_48h": 63,
+    "fan_out_48h": 3,
+    "inflow_48h_inr": 94500,
+    "cash_out_ratio_7d": 0.97,
+    "dormant_days_before_burst": 0,
+    "avg_ticket_inr": 1500,
+    "fri_level": "very_high",
+    "linked_complaints_1930": 8,
+    "kyc_tier": "min_kyc",
+    "mule_risk_score": 0.91,
+    "risk_band": "critical",
+    "reasons": [
+      "8 cybercrime-helpline (1930) complaints name this payee",
+      "97% of inflow moved out within 7 days",
+      "Linked mobile carries telecom FRI 'very_high'"
+    ]
+  },
+  {
+    "vpa": "quickloan.processing@rakshakdemo",
+    "display_name": "QuickLoan Processing Desk",
+    "account_age_days": 36,
+    "fan_in_48h": 21,
+    "fan_out_48h": 4,
+    "inflow_48h_inr": 273000,
+    "cash_out_ratio_7d": 0.9,
+    "dormant_days_before_burst": 0,
+    "avg_ticket_inr": 13000,
+    "fri_level": "high",
+    "linked_complaints_1930": 2,
+    "kyc_tier": "min_kyc",
+    "mule_risk_score": 0.79,
+    "risk_band": "high",
+    "reasons": [
+      "2 cybercrime-helpline (1930) complaints name this payee",
+      "90% of inflow moved out within 7 days",
+      "Linked mobile carries telecom FRI 'high'"
+    ]
   }
 ]
