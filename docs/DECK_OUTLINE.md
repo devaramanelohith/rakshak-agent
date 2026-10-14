@@ -31,3 +31,9 @@ Visual rule for every slide: one screenshot or clip from the running product, on
 ## Video alignment (under 3 minutes)
 
 0:00 to 0:20 problem with the three numbers (slide 2); 0:20 to 0:40 the gap in one sentence (slide 4); 0:40 to 1:50 the live demo, spending at least 45 seconds on the payment screen and the hold (slide 6), then 15 seconds on the fraud desk case and referral; 1:50 to 2:30 architecture and the models, with the agent trace on screen (slides 7 and 8); 2:30 to 2:50 evaluation table and safeguards (slide 10); 2:50 to 3:00 roadmap and ask (slide 12). Record the demo on the deployed Cloud Run URL, not localhost.
+
+
+## Added 15 Oct: two slides to insert
+
+- **Privacy by design (after the architecture slide):** the three tiers table from docs/PRIVACY_TIERS.md; "Guardian mode is opt-in, the indicator is always visible, raw audio is never stored, the caller never hears Rakshak, the customer keeps the override". Maps to the Solution Challenge proxy line "Security & Privacy".
+- **Where the data comes from (before the eval slide):** the payee feature table with sources (ledger, DoT FRI, I4C registry), the lineage record as shown on the fraud desk, and the production path (Pub/Sub to BigQuery, scheduled `sql/payee_risk.sql`). Say "synthetic ledger in this prototype" in the footer.

@@ -251,6 +251,8 @@ def score_features(f: dict, registry: dict) -> tuple[float, str, list[str]]:
     else:
         band = "low"
     reasons: list[str] = []
+    if band == "low":
+        return score, band, [f"Steady pattern: {fan_in} regular payers in 48 h, {int(cash * 100)}% moved out this week, account {age} days old" if age is not None else "Steady, ordinary payment pattern"]
     if fan_in >= 8:
         reasons.append(f"Received money from {fan_in} different payers in the last 48 hours")
     if cash >= 0.8:
