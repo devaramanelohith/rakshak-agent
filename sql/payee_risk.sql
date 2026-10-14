@@ -39,8 +39,13 @@ SELECT *,
     0.30 * (fan_in_48h >= 8) + 0.20 * (cash_out_ratio_7d >= 0.8) + 0.15 * (dormant_days_before_burst >= 30)
     + 0.15 * (fri_level IN ('high','very_high')) + 0.15 * (linked_complaints_1930 > 0) + 0.05 * (account_age_days < 30)
   ) AS mule_risk_score,
-  CASE WHEN fan_in_48h >= 8 AND cash_out_ratio_7d >= 0.8 THEN 'critical'
-       WHEN fan_in_48h >= 5 OR linked_complaints_1930 > 0 OR fri_level IN ('high','very_high') THEN 'high'
-       WHEN account_age_days < 30 OR cash_out_ratio_7d >= 0.6 THEN 'medium' ELSE 'low' END AS risk_band,
+  -- band follows the score: many payers alone is normal for a shop; it is the combination that marks a mule
+  CASE WHEN LEAST(1.0, 0.30 * (fan_in_48h >= 8) + 0.20 * (cash_out_ratio_7d >= 0.8) + 0.15 * (dormant_days_before_burst >= 30)
+                    + 0.15 * (fri_level IN ('high','very_high')) + 0.15 * (linked_complaints_1930 > 0) + 0.05 * (account_age_days < 30)) >= 0.85 THEN 'critical'
+       WHEN LEAST(1.0, 0.30 * (fan_in_48h >= 8) + 0.20 * (cash_out_ratio_7d >= 0.8) + 0.15 * (dormant_days_before_burst >= 30)
+                    + 0.15 * (fri_level IN ('high','very_high')) + 0.15 * (linked_complaints_1930 > 0) + 0.05 * (account_age_days < 30)) >= 0.65 THEN 'high'
+       WHEN LEAST(1.0, 0.30 * (fan_in_48h >= 8) + 0.20 * (cash_out_ratio_7d >= 0.8) + 0.15 * (dormant_days_before_burst >= 30)
+                    + 0.15 * (fri_level IN ('high','very_high')) + 0.15 * (linked_complaints_1930 > 0) + 0.05 * (account_age_days < 30)) >= 0.35 THEN 'medium'
+       ELSE 'low' END AS risk_band,
   ARRAY<STRING>[] AS reasons
 FROM feats;

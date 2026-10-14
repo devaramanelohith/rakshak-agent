@@ -60,6 +60,9 @@ class Settings(BaseModel):
     use_firestore: bool = Field(default_factory=lambda: _env_bool("USE_FIRESTORE"))
     firestore_collection_prefix: str = Field(default_factory=lambda: os.getenv("FIRESTORE_PREFIX", "rakshak"))
     pubsub_topic: str | None = Field(default_factory=lambda: os.getenv("PUBSUB_ALERT_TOPIC"))
+    ledger_enabled: bool = Field(default_factory=lambda: _env_bool("RAKSHAK_LEDGER", True))
+    bigquery_ledger_table: str | None = Field(default_factory=lambda: os.getenv("BIGQUERY_LEDGER_TABLE"))
+    pubsub_ledger_topic: str | None = Field(default_factory=lambda: os.getenv("PUBSUB_LEDGER_TOPIC"))
 
     # --- Telephony bridge (optional) -----------------------------------------
     twilio_account_sid: str | None = Field(default_factory=lambda: os.getenv("TWILIO_ACCOUNT_SID"))

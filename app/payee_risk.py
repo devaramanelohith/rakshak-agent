@@ -65,17 +65,46 @@ def _from_bigquery(vpa: str) -> dict | None:  # pragma: no cover - needs GCP
 
 
 def lookup_payee(vpa: str) -> dict:
+    """Registry fields (FRI, 1930 complaints, KYC) from the static table or BigQuery; behavioural features
+    (fan-in, cash-out, dormancy, age) recomputed from the ledger stream when it is enabled."""
+    import time as _time
+
+    from .ledger import score_features, simulator
+
     vpa = (vpa or "").strip().lower()
     row: dict | None = None
     if settings.bigquery_payee_table:
         row = _from_bigquery(vpa)
-    if row is None:
-        row = _local_table().get(vpa)
         if row is not None:
-            row = {**row, "source": "local_table"}
-    if row is None:
-        row = {**UNKNOWN_TEMPLATE, "vpa": vpa}
-    return row
+            row["lineage"] = {"source": "bigquery", "table": settings.bigquery_payee_table, "formula": "sql/payee_risk.sql", "computed_at": _time.time()}
+            return row
+    base = _local_table().get(vpa)
+    sim = simulator()
+    feats = sim.features(vpa) if sim else None
+    if feats:
+        registry = base or {}
+        score, band, reasons = score_features(feats, registry)
+        row = {
+            **(base or {"vpa": vpa, "display_name": "Unknown payee", "fri_level": "unknown", "linked_complaints_1930": 0, "kyc_tier": "unknown"}),
+            **feats,
+            "mule_risk_score": score,
+            "risk_band": band,
+            "reasons": reasons,
+            "source": "ledger_features",
+            "lineage": {
+                "source": "simulated_ledger",
+                "formula": "sql/payee_risk.sql",
+                "tx_count_payee_7d": feats.get("tx_count_7d", 0),
+                "tx_in_window": len(sim.txs),
+                "computed_at": _time.time(),
+                "registry_fields": ["fri_level (DoT FRI, static demo)", "linked_complaints_1930 (I4C, static demo)", "kyc_tier"],
+                "sinks": sim.sinks,
+            },
+        }
+        return row
+    if base is not None:
+        return {**base, "source": "local_table", "lineage": {"source": "demo_risk_table", "computed_at": _time.time()}}
+    return {**UNKNOWN_TEMPLATE, "vpa": vpa, "lineage": {"source": "unknown_payee", "computed_at": _time.time()}}
 
 
 def all_payees() -> list[dict]:

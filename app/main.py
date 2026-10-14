@@ -22,6 +22,7 @@ from . import payment as payment_mod  # noqa: E402
 from .config import configure_env, settings  # noqa: E402
 from .guardian_voice import run_guardian_voice  # noqa: E402
 from .intervention import prewarm, tts_pcm16  # noqa: E402
+from .ledger import run_ticker, simulator  # noqa: E402
 from .payee_risk import all_payees, lookup_payee  # noqa: E402
 from .replay import get_script, load_scripts, start_replay, stop_replay  # noqa: E402
 from .session import registry  # noqa: E402
@@ -61,6 +62,9 @@ async def lifespan(_app: FastAPI):
             for cid in payment_mod.expire_holds():
                 log.info("hold expired %s", cid)
     tasks.append(asyncio.create_task(_expiry_loop()))
+    if settings.ledger_enabled:
+        simulator()
+        tasks.append(asyncio.create_task(run_ticker()))
     yield
     for t in tasks:
         t.cancel()
@@ -287,6 +291,18 @@ async def put_profile(user_id: str, patch: dict):
 @app.get("/api/payees")
 async def payees():
     return all_payees()
+
+
+@app.get("/api/ledger/stats")
+async def ledger_stats():
+    sim = simulator()
+    return sim.stats() if sim else {"enabled": False}
+
+
+@app.get("/api/ledger/recent")
+async def ledger_recent(vpa: str, limit: int = 12):
+    sim = simulator()
+    return sim.recent(vpa, limit) if sim else []
 
 
 @app.get("/api/payees/{vpa}")
