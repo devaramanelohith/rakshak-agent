@@ -203,7 +203,7 @@ function ringStart() {
 }
 function ringStop() { if (_ring) { clearInterval(_ring); _ring = null; } if (navigator.vibrate) navigator.vibrate(0); }
 function onIncoming(ev) {
-  if (S.callActive) return;
+  if ($('view-call').classList.contains('is-active')) return;  // already on a call screen
   S.callerDisplay = ev.caller_display || 'Unknown number';
   $('incTitle').textContent = S.callerDisplay; openSheet('incomingSheet'); ringStart(); log('incoming call from ' + S.callerDisplay);
 }

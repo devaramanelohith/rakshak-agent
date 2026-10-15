@@ -36,6 +36,15 @@ configure_env()
 app = FastAPI(title="Rakshak - scam-moment interception agent", version="0.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.include_router(twilio_router)
+
+
+@app.middleware("http")
+async def _no_cache(request, call_next):
+    # Demo devices must never run a stale app.js/styles.css after a redeploy.
+    resp = await call_next(request)
+    if request.url.path.startswith("/static") or resp.headers.get("content-type", "").startswith("text/html"):
+        resp.headers["Cache-Control"] = "no-cache, must-revalidate"
+    return resp
 WEB = settings.web_dir
 app.mount("/static", StaticFiles(directory=str(WEB)), name="static")
 
@@ -366,7 +375,8 @@ async def ws_call(ws: WebSocket, session_id: str, role: str):
     await ws.accept()
     s = registry.get_or_create(session_id)
     s.audio_sockets[role] = ws
-    await s.ensure_started(source="app")
+    if role == "user":
+        await s.ensure_started(source="app")  # a caller ringing does not make the call active until it is answered
     await s.broadcast({"type": "party_joined", "role": role})
     try:
         while True:

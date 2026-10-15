@@ -36,7 +36,16 @@ case the customer can see.
 
 The product story is identical at every layer; only the audio source changes. Never go on stage with only L2/L3.
 
-## 3. Exactly how the Singapore stage demo runs (L2)
+## 3. Exactly how the Singapore stage demo runs (L2): three phones, one call
+
+**Pages.** Customer phone: `/` (Sunita's bank app). Caller phone: `/call?session=<id>` (a phone-style dialer: Call, mute, hang up, plus a script prompter). Family phone: `/family?user=demo-user` (Priya's phone; alerts arrive with a chime). Projector: `/desk`. The session id is under "Demo controls" on the customer phone, and the caller/family links there carry it.
+
+**Flow.** The caller taps Call: the customer's phone rings (sheet with the number, Answer / Decline, ring tone and vibration). The judge answers; the mic switches on automatically and both parties hear each other through the relay. The teammate speaks the script (or taps "Say" lines in the prompter if they prefer not to speak). Transcript, gauge and reasons update live; the whisper fires privately at 85%. At the payment demand the judge opens Pay, the fields are pre-filled when a script is running, and the hold fires; Priya's phone chimes with the alert at the same moment.
+
+**Audio hygiene.** Both phones on the same Wi-Fi or hotspot; the caller wears earphones (otherwise the customer phone's speaker feeds back into the caller mic); the customer phone on speaker so the room hears Rakshak's barge-in. Chrome on Android or Safari on iOS; grant the microphone on first use (HTTPS, so the Cloud Run URL works; a laptop hotspot plus a local server needs `--ssl` or the scripted "Say" path).
+
+### Legacy wording (operator console)
+
 
 **Devices.** Phone A (victim) opens `https://<cloud-run-url>/?user=demo-user` in Chrome. Laptop B (caller) opens
 `/scammer?session=<id>` (the session id is printed on Phone A's home screen). A third screen (projector) shows
