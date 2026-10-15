@@ -42,6 +42,7 @@ class CallSession:
         self.transcribers: dict[str, LiveTranscriber] = {}
         self.whispered = False
         self.source = "app"
+        self.live_call = False
         self._analysis_task: asyncio.Task | None = None
         self._last_analysis = 0.0
         self._analysed_turns = 0

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en" data-app="customer">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Family · Rakshak alerts</title>
+<link rel="stylesheet" href="/static/styles.css">
+<style>
+  .wrap { max-width: 420px; margin: 0 auto; padding: 20px 16px calc(24px + env(safe-area-inset-bottom)); min-height: 100dvh; }
+  .alert { border-left: 5px solid #e5484d; animation: pop .3s ease; } @keyframes pop { from { transform: scale(.97); opacity: 0 } to { transform: none; opacity: 1 } }
+  .alert.resolved { border-left-color: #1e9e5a; opacity: .8; }
+  .when { color: var(--c-text-3); font-size: var(--fs-sm); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="cluster" style="justify-content:space-between"><div class="brand"><span class="mark">🛡️</span>Rakshak · family</div><span class="pill pill--outline" id="connPill">connecting</span></div>
+  <h1 id="title" style="margin:16px 0 4px">Alerts for <span id="who">your parent</span></h1>
+  <p class="small muted">This is the trusted contact's phone. When Rakshak pauses a payment during a suspicious call, the alert appears here immediately.</p>
+  <div id="list"><div class="empty">🔔<div class="empty__title">No alerts yet</div><div class="small">You will hear a chime when one arrives.</div></div></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</main>
+<script src="/static/common.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const userId = qs('user') || 'demo-user';
+const SEEN = new Set(); let profile = null; let ctx = null;
+function chime() { try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); const t = ctx.currentTime; [0, .18, .36].forEach((d, i) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = [880, 1100, 1320][i]; o.connect(g); g.connect(ctx.destination); g.gain.setValueAtTime(.0001, t + d); g.gain.exponentialRampToValueAtTime(.3, t + d + .02); g.gain.exponentialRampToValueAtTime(.0001, t + d + .16); o.start(t + d); o.stop(t + d + .18); }); } catch (e) {} if (navigator.vibrate) navigator.vibrate([200, 100, 200]); }
+function card(a, c) {
+  const status = c ? c.status : 'on_hold';
+  const resolved = status !== 'on_hold';
+  const name = profile ? profile.name : 'your parent';
+  return `<div class="card alert ${resolved ? 'resolved' : ''}" id="al-${a.alert_id}">
+    <div class="cluster" style="justify-content:space-between"><b>${resolved ? 'Resolved' : 'Payment paused'}</b><span class="when">${new Date(a.created_at * 1000).toLocaleTimeString()}</span></div>
+    <p style="margin:8px 0">${esc(a.message)}</p>
+    ${c ? `<div class="small muted">Status: ${esc(status.replace(/_/g, ' '))} · ${esc(c.rubric.scam_type.replace(/_/g, ' '))} · risk ${Math.round(c.rubric.risk_score * 100)}%</div>` : ''}
+    <div class="cluster" style="margin-top:10px;gap:8px">
+      <a class="btn btn--primary" href="tel:${encodeURIComponent((profile && profile.phone) || '')}">📞 Call ${esc(name.split(' ')[0])} now</a>
+      <button class="btn btn--secondary" data-ack="${a.alert_id}">I'm handling it</button>
+    </div></div>`;
+}
+async function refresh() {
+  try {
+    profile = profile || await api(`/api/profiles/${userId}`); $('who').textContent = profile.name;
+    const alerts = await api(`/api/alerts?user_id=${encodeURIComponent(userId)}`);
+    const cases = await api('/api/cases');
+    const byCase = Object.fromEntries(cases.map(c => [c.case_id, c]));
+    if (alerts.length) {
+      $('list').innerHTML = alerts.map(a => card(a, byCase[a.case_id])).join('');
+      $('list').querySelectorAll('[data-ack]').forEach(b => b.onclick = () => { b.textContent = 'Handled ✓'; b.disabled = true; });
+      alerts.forEach(a => { if (!SEEN.has(a.alert_id)) { if (SEEN.size) chime(); SEEN.add(a.alert_id); } });
+    }
+    $('connPill').textContent = 'live'; $('connPill').className = 'pill pill--live';
+  } catch (e) { $('connPill').textContent = 'offline'; $('connPill').className = 'pill pill--outline'; }
+}
+openWS('/ws/events/all', { onJson: (e) => { if ((e.type === 'decision' && e.case.alert) || e.type === 'case_update') refresh(); }, onOpen: () => refresh(), onClose: () => setTimeout(() => location.reload(), 3000) });
+refresh(); setInterval(refresh, 10000);
+</script>
+</body>
+</html>

@@ -93,6 +93,16 @@ async def desk_page():
     return _page("desk.html")
 
 
+@app.get("/call")
+async def caller_page():
+    return _page("caller.html")
+
+
+@app.get("/family")
+async def family_page():
+    return _page("family.html")
+
+
 @app.get("/api/health")
 @app.get("/healthz")  # note: Cloud Run's front end intercepts /healthz; use /api/health there
 async def healthz():
@@ -370,6 +380,21 @@ async def ws_call(ws: WebSocket, session_id: str, role: str):
                 data = _json.loads(msg["text"])
                 if data.get("type") == "text_turn":
                     await s.add_turn(role, data["text"])
+                elif data.get("type") == "ring" and role == "caller":
+                    # The caller's phone is ringing the customer: the customer app shows accept/decline.
+                    if data.get("caller_display"):
+                        s.caller_display = str(data["caller_display"])[:40]
+                    s.live_call = True
+                    await s.broadcast({"type": "incoming_call", "caller_display": s.caller_display})
+                elif data.get("type") == "accept" and role == "user":
+                    await s.broadcast({"type": "call_accepted"})
+                elif data.get("type") == "decline" and role == "user":
+                    await s.broadcast({"type": "call_declined"})
+                    stop_replay(session_id)
+                    await s.end()
+                    break
+                elif data.get("type") == "mute":
+                    await s.broadcast({"type": "party_muted", "role": role, "muted": bool(data.get("muted"))})
                 elif data.get("type") == "end_call":
                     stop_replay(session_id)
                     await s.end()

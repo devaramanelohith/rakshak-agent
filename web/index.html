@@ -58,6 +58,7 @@
               <select id="userSel"><option value="demo-user">Sunita Rao · 60+ · Hindi · trusted: Priya (daughter)</option><option value="demo-user-en">Daniel Tan · 25-39 · Singapore English · trusted: Mei (spouse)</option></select></div>
             <div class="small muted">Session <b id="sidText" class="mono">…</b></div>
             <div class="small muted">Caller console: <a id="scammerLink" target="_blank" rel="noopener">open on another device</a></div>
+            <div class="small muted">Live two-device demo: caller phone <a id="callerLink" target="_blank" rel="noopener">/call</a> · family phone <a id="familyLink" target="_blank" rel="noopener">/family</a></div>
             <button class="btn btn--ghost btn--sm" id="btnReOnboard" type="button" style="margin-top:8px">Show onboarding again</button>
           </div>
         </details>
@@ -251,6 +252,18 @@
     </div>
 
     <!-- OVERRIDE CONFIRMATION SHEET -->
+    <div class="sheet" id="incomingSheet" role="dialog" aria-modal="true" aria-labelledby="incTitle">
+      <div class="sheet__panel" style="text-align:center">
+        <div class="sheet__grab" aria-hidden="true"></div>
+        <div class="small muted">Incoming call</div>
+        <h2 class="sheet__title" id="incTitle" style="margin-top:6px">Unknown number</h2>
+        <div class="small muted" id="incSub">Not in your contacts · Rakshak will listen if you answer</div>
+        <div class="cluster" style="justify-content:center;gap:16px;margin-top:18px">
+          <button class="btn btn--danger" id="btnDecline" type="button">Decline</button>
+          <button class="btn btn--safe" id="btnAccept" type="button">Answer</button>
+        </div>
+      </div>
+    </div>
     <div class="sheet" id="confirmSheet" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
       <div class="sheet__panel">
         <div class="sheet__grab" aria-hidden="true"></div>

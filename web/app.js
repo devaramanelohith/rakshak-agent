@@ -60,7 +60,7 @@ async function init() {
     S.scripts = await api('/api/scripts');
   } catch (e) { renderBootError(e); return; }
   $('sidText').textContent = S.sid;
-  const link = `/scammer?session=${S.sid}`; $('scammerLink').href = link; $('scammerLink2').href = link;
+  const link = `/scammer?session=${S.sid}`; $('scammerLink').href = link; $('scammerLink2').href = link; if ($('callerLink')) $('callerLink').href = `/call?session=${S.sid}`; if ($('familyLink')) $('familyLink').href = `/family?user=${S.userId}`;
   $('homeName').textContent = `Namaste, ${S.profile.name}`;
   const opts = S.scripts.map(s => `<option value="${s.id}">${esc(s.title)} (${s.language})</option>`).join('');
   $('scriptSel').innerHTML = opts; $('drillScriptSel').innerHTML = opts;
@@ -84,7 +84,7 @@ async function newSession() {
   S.sid = snap.session_id; S.lastRubric = null; S.replayPayment = null; S.case = null;
   if (S.callWS) { try { S.callWS.close(); } catch (e) {} S.callWS = null; }
   S.evGen++; if (S.evWS) { try { S.evWS.close(); } catch (e) {} }
-  $('sidText').textContent = S.sid; const link = `/scammer?session=${S.sid}`; $('scammerLink').href = link; $('scammerLink2').href = link;
+  $('sidText').textContent = S.sid; const link = `/scammer?session=${S.sid}`; $('scammerLink').href = link; $('scammerLink2').href = link; if ($('callerLink')) $('callerLink').href = `/call?session=${S.sid}`; if ($('familyLink')) $('familyLink').href = `/family?user=${S.userId}`;
   resetCallUI(); connectEvents(); log(`new session ${S.sid}`);
 }
 
@@ -106,7 +106,10 @@ function onEvent(ev) {
       break;
     case 'replay_stopped': if (D.active) drillFinish(true); break;
     case 'replay_marker': log('script marker: ' + ev.marker); if (D.active) drillMarker(ev.marker, ev.n); break;
-    case 'party_joined': log('party joined: ' + ev.role); if (ev.role === 'caller') toast('Caller joined the line'); break;
+    case 'party_joined': log('party joined: ' + ev.role); break;
+    case 'incoming_call': onIncoming(ev); break;
+    case 'call_accepted': break;
+    case 'party_muted': if (ev.role === 'caller') toast(ev.muted ? 'Caller muted' : 'Caller unmuted', 1200); break;
     case 'call_started': setListening(true); break;
     case 'call_ended': stopCallUI(); setListening(false); break;
     case 'analysis_error': log('analysis error: ' + ev.error); toast('Analysis hiccup, Rakshak keeps listening'); break;
@@ -189,8 +192,35 @@ $('btnEditGuardian').onclick = () => startOnboarding(2);
 $('btnReOnboard').onclick = () => { localStorage.removeItem(ONBOARD_KEY()); startOnboarding(1); };
 
 // ---------- call ----------
+let _ring = null;
+function ringStart() {
+  try {
+    const ctx = S.caller.ensure();
+    const beep = () => { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = 440; o.connect(g); g.connect(ctx.destination); const t = ctx.currentTime; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9); o.start(t); o.stop(t + 1); };
+    beep(); _ring = setInterval(beep, 2000);
+  } catch (e) { /* audio locked until first tap: the sheet and vibration still show */ }
+  if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 400]);
+}
+function ringStop() { if (_ring) { clearInterval(_ring); _ring = null; } if (navigator.vibrate) navigator.vibrate(0); }
+function onIncoming(ev) {
+  if (S.callActive) return;
+  S.callerDisplay = ev.caller_display || 'Unknown number';
+  $('incTitle').textContent = S.callerDisplay; openSheet('incomingSheet'); ringStart(); log('incoming call from ' + S.callerDisplay);
+}
+async function acceptCall() {
+  ringStop(); closeSheet('incomingSheet'); S.pendingAccept = true;
+  await startCall();
+  if (S.callWS && S.callWS.readyState === 1 && S.pendingAccept) { S.pendingAccept = false; S.callWS.send(JSON.stringify({ type: 'accept' })); }
+  if (!S.mic) await toggleMic();
+}
+async function declineCall() {
+  ringStop(); closeSheet('incomingSheet');
+  if (S.callWS && S.callWS.readyState === 1) { try { S.callWS.send(JSON.stringify({ type: 'decline' })); } catch (e) {} }
+  else { try { await api(`/api/sessions/${S.sid}/end`); } catch (e) {} }
+  toast('Call declined');
+}
 async function startCall() {
-  show('call'); $('callerNum').textContent = '+91 98765 00301';
+  show('call'); $('callerNum').textContent = S.callerDisplay || '+91 98765 00301'; S.callActive = true;
   resetCallUI();
   S.callStart = Date.now(); clearInterval(S.timer);
   S.timer = setInterval(() => { $('callTimer').textContent = fmtClock((Date.now() - S.callStart) / 1000); }, 1000);
@@ -213,7 +243,7 @@ function connectCallWS() {
       if (m.type === 'rakshak_audio' && m.audio_b64) { const pcm = b64ToInt16(m.audio_b64); if (m.kind !== 'whisper') S.holdAudio = { pcm, rate: m.rate || 16000 }; S.caller.duck(0.15, 8); S.guardian.play(pcm, m.rate || 16000); }
       if (m.type === 'caller_audio' && m.audio_b64) { S.caller.play(b64ToInt16(m.audio_b64), m.rate || 16000); }
     },
-    onOpen: () => log('call audio channel open'),
+    onOpen: () => { log('call audio channel open'); if (S.pendingAccept) { S.pendingAccept = false; S.callWS.send(JSON.stringify({ type: 'accept' })); } },
   });
 }
 function setMicUI(on) { $('btnMic').setAttribute('aria-pressed', on ? 'true' : 'false'); $('btnMic').innerHTML = icon(on ? 'micOff' : 'mic') + (on ? 'Stop my mic' : 'Use my mic'); $('btnMic').classList.toggle('btn--primary', on); $('btnMic').classList.toggle('btn--secondary', !on); }
@@ -229,7 +259,7 @@ async function toggleMic() {
     $('micBannerTitle').textContent = title; $('micBannerText').textContent = text; $('micBanner').hidden = false; log('mic error: ' + e.message);
   }
 }
-function stopCallUI() { clearInterval(S.timer); if (S.mic) { S.mic.stop(); S.mic = null; } setMicUI(false); }
+function stopCallUI() { clearInterval(S.timer); if (S.mic) { S.mic.stop(); S.mic = null; } setMicUI(false); S.callActive = false; ringStop(); if ($('incomingSheet').classList.contains('is-open')) closeSheet('incomingSheet'); }
 async function endCall() { try { await api(`/api/sessions/${S.sid}/end`); } catch (e) {} stopCallUI(); setListening(false); show('home'); }
 
 // ---------- payment ----------
@@ -478,6 +508,7 @@ $('btnConfirmNo').onclick = () => closeSheet('confirmSheet');
 $('btnConfirmYes').onclick = () => { if (parseAmount($('confirmAmount').value) !== Number(S.case.payment.amount_inr)) { setInvalid('fConfirm', true); $('confirmAmount').focus(); return; } doOverride('customer typed the amount and confirmed'); };
 $('confirmAmount').addEventListener('input', () => setInvalid('fConfirm', false));
 $('btnTalk').onclick = startTalk; $('btnTalkEnd').onclick = endTalk;
+$('btnAccept').onclick = acceptCall; $('btnDecline').onclick = declineCall;
 $('btnHome').onclick = () => { endTalk(); show('home'); };
 $('btnDrill').onclick = () => { $('drillSetup').hidden = false; $('drillRun').hidden = true; $('drillSummary').hidden = true; show('drill'); };
 $('btnDrillStart').onclick = drillStart; $('btnDrillStop').onclick = drillStop;
