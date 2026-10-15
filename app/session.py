@@ -107,6 +107,12 @@ class CallSession:
         self._analysed_turns = len(self.turns)
         self.rubric = rubric
         self.rubric_history.append({"t": self.elapsed(), "risk": rubric.risk_score, "stage": rubric.stage, "signals": rubric.signal_count})
+        if rubric.risk_score >= float(self.profile.get("hold_threshold") or settings.hold_threshold):
+            # Remember the call on the customer's profile so a payment made after hanging up (or from another
+            # screen/app) within the carry-over window is still judged with this call's context.
+            store().put_profile(self.user_id, {"last_high_risk_call": {
+                "session_id": self.id, "ts": time.time(), "risk_score": rubric.risk_score, "scam_type": rubric.scam_type,
+                "signals": rubric.signals, "reasons": rubric.reasons[:3], "reasons_user_language": rubric.reasons_user_language[:3], "language": rubric.language}})
         await self.broadcast({"type": "risk_update", "t": self.elapsed(), "rubric": rubric.model_dump()})
         if rubric.risk_score >= settings.whisper_threshold and not self.whispered and self.profile.get("guardian_enabled", True):
             await self.whisper()

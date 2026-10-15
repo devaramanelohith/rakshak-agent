@@ -42,10 +42,33 @@ async def _speak(text: str) -> str | None:
         return None
 
 
+def carried_over_rubric(profile: dict, session_rubric: Rubric | None) -> tuple[Rubric, dict | None]:
+    """If this session has no (or a lower) call rubric but the customer had a high-risk call within the
+    carry-over window, use that call's context with a time decay. Returns (rubric, carryover_info)."""
+    last = profile.get("last_high_risk_call") or {}
+    if not last:
+        return session_rubric or Rubric(), None
+    age_min = (time.time() - float(last.get("ts", 0))) / 60.0
+    if age_min > settings.carryover_minutes:
+        return session_rubric or Rubric(), None
+    decay = max(0.6, 1.0 - age_min / (2.0 * settings.carryover_minutes))
+    carried = Rubric(language=last.get("language", "unknown"), scam_type=last.get("scam_type", "other"), stage="post_call",
+                     signals=last.get("signals") or {}, risk_score=round(float(last.get("risk_score", 0)) * decay, 3),
+                     reasons=[f"A high-risk call ({last.get('scam_type', 'scam').replace('_', ' ')}) ended {int(age_min)} minutes ago"] + list(last.get("reasons") or []),
+                     reasons_user_language=list(last.get("reasons_user_language") or []), summary="carried over from a recent high-risk call", source="carryover")
+    if session_rubric and session_rubric.risk_score >= carried.risk_score:
+        return session_rubric, None
+    return carried, {"from_session": last.get("session_id"), "minutes_ago": int(age_min), "original_risk": last.get("risk_score"), "decayed_risk": carried.risk_score}
+
+
 async def evaluate_payment(session, vpa: str, payee_name: str, amount_inr: float, use_agent: bool = True, wait_s: float | None = None) -> dict:
     profile = store().get_profile(session.user_id)
-    rubric: Rubric = session.rubric or Rubric()
+    rubric, carryover = carried_over_rubric(profile, session.rubric)
     payee = lookup_payee(vpa)
+    if carryover and payee.get("risk_band") == "low" and payee.get("source") != "unknown":
+        # A known, low-risk payee right after a scam call deserves a caution, not a hold: cap the carried risk.
+        rubric = rubric.model_copy(update={"risk_score": min(rubric.risk_score, 0.5), "signals": {k: False for k in rubric.signals}})
+        carryover["capped_for_low_risk_payee"] = True
     fusion = fuse(rubric.risk_score, rubric.signals, payee, amount_inr, profile)
     hold_minutes = settings.hold_minutes if fusion.action.startswith("hold") else 0
     lang, scripted = compose(fusion.action, profile, amount_inr, settings.hold_minutes)
@@ -58,9 +81,10 @@ async def evaluate_payment(session, vpa: str, payee_name: str, amount_inr: float
         "profile": profile,
         "payment": {"vpa": vpa, "payee_name": payee_name, "amount_inr": float(amount_inr)},
         "rubric": rubric.model_dump(),
-        "transcript_excerpt": format_turns(session.turns, 2500),
+        "transcript_excerpt": format_turns(session.turns, 2500) or (f"(no transcript in this session; context carried over from call {carryover['from_session']}, {carryover['minutes_ago']} min ago)" if carryover else ""),
         "payee": payee,
         "policy": {"score": fusion.score, "action": fusion.action, "reasons": fusion.reasons, "call_risk": fusion.call_risk, "payee_risk": fusion.payee_risk},
+        "carryover": carryover,
         "decision": {
             "action": fusion.action,
             "hold_minutes": hold_minutes,

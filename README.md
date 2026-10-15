@@ -232,6 +232,8 @@ Details, DPDP Act and MAS considerations, and the production client path (Fireba
 
 Rakshak degrades gracefully with the customer's consent: Tier 0 uses only call state and payee risk, Tier 1 keeps an on-device transcript that never leaves the phone until a payment is attempted, Tier 2 (this prototype) analyses audio in the cloud through lawful channels (in-app calls, telco partner, OS vendor). Payee features are computed from a ledger stream with the same formula as `sql/payee_risk.sql`, and every payee card carries a lineage record. Full design: [docs/PRIVACY_TIERS.md](docs/PRIVACY_TIERS.md). Ledger endpoints: `GET /api/ledger/stats`, `GET /api/ledger/recent?vpa=...`.
 
+**Pay after hanging up.** Scoring runs from the first ring, not from the pay screen. When a call scores above the hold threshold, Rakshak records it on the customer's profile; any payment within the next 60 minutes (`RAKSHAK_CARRYOVER_MINUTES`), even from a fresh app launch, is judged with that call's context, decayed with time. A known low-risk payee gets at most a warning in that window; a new or risky payee gets the hold. The case shows `carryover` with the originating session and minutes elapsed.
+
 ## License and team
 
 MIT License (add the `LICENSE` file to the repository root before submission; the repo does not contain one yet).
