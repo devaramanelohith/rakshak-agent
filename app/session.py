@@ -43,6 +43,7 @@ class CallSession:
         self.whispered = False
         self.source = "app"
         self.live_call = False
+        self.call_accepted = False
         self._analysis_task: asyncio.Task | None = None
         self._last_analysis = 0.0
         self._analysed_turns = 0
@@ -65,6 +66,8 @@ class CallSession:
 
     async def end(self) -> None:
         self.state = "ended"
+        self.live_call = False
+        self.call_accepted = False
         for t in list(self.transcribers.values()):
             await t.stop()
         self.transcribers.clear()
@@ -203,6 +206,8 @@ class CallSession:
             "rubric_history": self.rubric_history,
             "case_ids": self.case_ids,
             "whispered": self.whispered,
+            "live_call": self.live_call,
+            "call_accepted": self.call_accepted,
             "transcribers": {r: {"connected": t.connected, "errors": t.errors} for r, t in self.transcribers.items()},
             "profile": self.profile,
         }

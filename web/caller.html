@@ -81,7 +81,7 @@ async function loadScript() {
 function connectEvents() {
   if (C.evWS) C.evWS.close();
   C.evWS = openWS(`/ws/events/${C.sid}`, { onJson: (e) => {
-    if (e.type === 'call_accepted') { C.state = 'connected'; C.t0 = Date.now(); clearInterval(C.timer); C.timer = setInterval(() => setState('Connected · ' + fmtClock((Date.now() - C.t0) / 1000)), 1000); setState('Connected'); toast('Customer answered'); }
+    if (e.type === 'call_accepted') { clearInterval(C.ringTimer); C.state = 'connected'; C.t0 = Date.now(); clearInterval(C.timer); C.timer = setInterval(() => setState('Connected · ' + fmtClock((Date.now() - C.t0) / 1000)), 1000); setState('Connected'); toast('Customer answered'); }
     if (e.type === 'call_declined') { setState('Declined'); hangup(false); }
     if (e.type === 'call_ended') { if (C.state !== 'idle') { setState('Call ended'); hangup(false); } }
     if (e.type === 'party_joined' && e.role === 'user') { if (C.state === 'ringing') toast('Customer is on the line'); }
@@ -97,7 +97,7 @@ async function call() {
   connectEvents();
   C.callWS = openWS(`/ws/call/${C.sid}/caller`, {
     onBinary: (buf) => C.player.play(new Int16Array(buf), 16000),
-    onOpen: () => { setConn('connected', 'pill--live'); C.callWS.send(JSON.stringify({ type: 'ring', caller_display: $('dispInp').value || 'Unknown' })); C.state = 'ringing'; setState('Ringing the customer…'); },
+    onOpen: () => { setConn('connected', 'pill--live'); const ring = () => { if (C.state === 'ringing' && C.callWS && C.callWS.readyState === 1) C.callWS.send(JSON.stringify({ type: 'ring', caller_display: $('dispInp').value || 'Unknown' })); }; C.state = 'ringing'; ring(); clearInterval(C.ringTimer); C.ringTimer = setInterval(ring, 4000); setState('Ringing the customer…'); },
     onClose: () => { setConn('disconnected'); },
   });
   try {
@@ -109,7 +109,7 @@ async function call() {
 function hangup(send = true) {
   if (send && C.callWS && C.callWS.readyState === 1) { try { C.callWS.send(JSON.stringify({ type: 'end_call' })); } catch (e) {} }
   if (C.callWS) { try { C.callWS.close(); } catch (e) {} C.callWS = null; }
-  if (C.mic) { C.mic.stop(); C.mic = null; } clearInterval(C.timer); C.state = 'idle';
+  if (C.mic) { C.mic.stop(); C.mic = null; } clearInterval(C.timer); clearInterval(C.ringTimer); C.state = 'idle';
   $('btnCall').disabled = false; $('btnHang').disabled = true; $('sessField').hidden = false; $('nameField').hidden = false; setConn('not connected');
   if (send) setState('Call ended');
 }

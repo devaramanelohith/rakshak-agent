@@ -91,7 +91,7 @@ async function newSession() {
 // ---------- events ----------
 function onEvent(ev) {
   switch (ev.type) {
-    case 'hello': if (ev.snapshot) { ev.snapshot.turns.forEach(addTranscript); if (ev.snapshot.rubric) renderRubric(ev.snapshot.rubric); if (ev.snapshot.state === 'active') setListening(true); } break;
+    case 'hello': if (ev.snapshot) { ev.snapshot.turns.forEach(addTranscript); if (ev.snapshot.rubric) renderRubric(ev.snapshot.rubric); if (ev.snapshot.state === 'active') setListening(true); if (ev.snapshot.live_call && !ev.snapshot.call_accepted) onIncoming({ caller_display: ev.snapshot.caller_display }); } break;
     case 'transcript': addTranscript(ev.turn); break;
     case 'risk_update': renderRubric(ev.rubric); log(`risk ${Math.round(ev.rubric.risk_score * 100)}% stage=${ev.rubric.stage} (${ev.rubric.latency_ms} ms)`); break;
     case 'whisper': $('whisperText').textContent = ev.text; $('whisperBanner').hidden = false; addTranscript({ speaker: 'rakshak', text: ev.text }); log('whisper: ' + ev.text); break;

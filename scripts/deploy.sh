@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Deploy Rakshak to Cloud Run. Prereqs: gcloud auth login; a project with billing; the Gemini key in Secret Manager.
+# Deploy Rakshak to Cloud Run. Call sessions live in memory, so the demo runs ONE instance (max-instances 1);
+# for horizontal scale move sessions to Firestore/Memorystore first (docs/ARCHITECTURE.md). Prereqs: gcloud auth login; a project with billing; the Gemini key in Secret Manager.
 #   PROJECT=my-proj REGION=asia-southeast1 ./scripts/deploy.sh
 set -euo pipefail
 PROJECT="${PROJECT:-$(gcloud config get-value project)}"
@@ -29,7 +30,7 @@ ENV_VARS="GOOGLE_CLOUD_PROJECT=$PROJECT,GOOGLE_CLOUD_LOCATION=${MODEL_LOCATION:-
 
 gcloud run deploy "$SERVICE" --source . --quiet --project "$PROJECT" --region "$REGION" \
   --allow-unauthenticated --port 8080 --cpu 1 --memory 1Gi --concurrency 40 \
-  --min-instances "${MIN_INSTANCES:-1}" --max-instances "${MAX_INSTANCES:-10}" --timeout 3600 \
+  --min-instances "${MIN_INSTANCES:-1}" --max-instances "${MAX_INSTANCES:-1}" --timeout 3600 \
   --session-affinity --set-env-vars "$ENV_VARS" --set-secrets "GEMINI_API_KEY=$SECRET:latest"
 
 URL=$(gcloud run services describe "$SERVICE" --project "$PROJECT" --region "$REGION" --format 'value(status.url)')

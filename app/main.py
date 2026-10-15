@@ -394,9 +394,13 @@ async def ws_call(ws: WebSocket, session_id: str, role: str):
                     # The caller's phone is ringing the customer: the customer app shows accept/decline.
                     if data.get("caller_display"):
                         s.caller_display = str(data["caller_display"])[:40]
+                    if s.state == "ended":  # a reused session code: start fresh
+                        s.state, s.turns, s.rubric, s.rubric_history, s.whispered = "idle", [], None, [], False
                     s.live_call = True
-                    await s.broadcast({"type": "incoming_call", "caller_display": s.caller_display})
+                    if not s.call_accepted:
+                        await s.broadcast({"type": "incoming_call", "caller_display": s.caller_display})
                 elif data.get("type") == "accept" and role == "user":
+                    s.call_accepted = True
                     await s.broadcast({"type": "call_accepted"})
                 elif data.get("type") == "decline" and role == "user":
                     await s.broadcast({"type": "call_declined"})
