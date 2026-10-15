@@ -24,7 +24,7 @@
 <body>
 <main class="dial">
   <div>
-    <div class="cluster" style="justify-content:space-between"><span class="pill pill--outline" id="connPill">not connected</span><span class="pill" id="sessPill">session: –</span></div>
+    <div class="cluster" style="justify-content:space-between"><span class="pill pill--outline" id="connPill">not connected</span><span class="pill" id="sessPill">session: –</span><span class="pill pill--outline" id="custPill">customer's phone: ?</span></div>
     <div style="margin-top:28px">
       <div class="avatar">👤</div>
       <div class="big-num" id="target">Sunita Rao</div>
@@ -63,6 +63,7 @@ const $ = (id) => document.getElementById(id);
 const C = { sid: null, callWS: null, evWS: null, mic: null, player: new Player(), muted: false, t0: null, timer: null, script: null, state: 'idle' };
 function toast(m, ms = 2600) { const t = $('toast'); t.textContent = m; t.classList.add('is-open'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('is-open'), ms); }
 function setState(txt) { $('state').textContent = txt; }
+function presence(online) { $('custPill').textContent = online ? "customer's phone: open" : "customer's phone: NOT open on this code"; $('custPill').className = 'pill ' + (online ? 'pill--ok' : 'pill--hold'); if (!online && C.state === 'ringing') setState('Ringing… but the customer\'s phone is not open on session ' + C.sid + '. Ask them to open /?session=' + C.sid); }
 function setConn(txt, cls) { $('connPill').textContent = txt; $('connPill').className = 'pill ' + (cls || 'pill--outline'); }
 
 async function loadScripts() {
@@ -80,7 +81,9 @@ async function loadScript() {
 
 function connectEvents() {
   if (C.evWS) C.evWS.close();
-  C.evWS = openWS(`/ws/events/${C.sid}`, { onJson: (e) => {
+  C.evWS = openWS(`/ws/events/${C.sid}?role=caller`, { onJson: (e) => {
+    if (e.type === 'hello' && e.snapshot) presence(!!e.snapshot.customer_online);
+    if (e.type === 'presence' && e.role === 'user') presence(e.online);
     if (e.type === 'call_accepted') { clearInterval(C.ringTimer); C.state = 'connected'; C.t0 = Date.now(); clearInterval(C.timer); C.timer = setInterval(() => setState('Connected · ' + fmtClock((Date.now() - C.t0) / 1000)), 1000); setState('Connected'); toast('Customer answered'); }
     if (e.type === 'call_declined') { setState('Declined'); hangup(false); }
     if (e.type === 'call_ended') { if (C.state !== 'idle') { setState('Call ended'); hangup(false); } }

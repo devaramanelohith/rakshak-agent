@@ -66,7 +66,7 @@ async function init() {
   $('scriptSel').innerHTML = opts; $('drillScriptSel').innerHTML = opts;
   renderGuardianCard(); setListening(false);
   connectEvents();
-  log(`session ${S.sid} ready for ${S.profile.name}`);
+  log(`session ${S.sid} ready for ${S.profile.name}`); clog('page_loaded', navigator.userAgent.slice(0, 80));
   show('home');
   if (!localStorage.getItem(ONBOARD_KEY())) startOnboarding();
 }
@@ -77,7 +77,7 @@ function renderBootError(e) {
 }
 function connectEvents() {
   const gen = ++S.evGen;
-  S.evWS = openWS(`/ws/events/${S.sid}`, { onJson: onEvent, onClose: () => { if (gen === S.evGen) setTimeout(() => { if (gen === S.evGen) connectEvents(); }, 1500); } });
+  S.evWS = openWS(`/ws/events/${S.sid}?role=user`, { onJson: onEvent, onClose: () => { if (gen === S.evGen) setTimeout(() => { if (gen === S.evGen) connectEvents(); }, 1500); } });
 }
 async function newSession() {
   const snap = await api('/api/sessions', 'POST', { session_id: null, user_id: S.userId, mode: 'audio' });
@@ -202,13 +202,19 @@ function ringStart() {
   if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 400]);
 }
 function ringStop() { if (_ring) { clearInterval(_ring); _ring = null; } if (navigator.vibrate) navigator.vibrate(0); }
+function clog(event, detail) { if (!S.sid) return; fetch(`/api/sessions/${S.sid}/clientlog`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event, detail: detail ? String(detail).slice(0, 200) : null, role: 'user' }) }).catch(() => {}); }
 function onIncoming(ev) {
-  if ($('view-call').classList.contains('is-active')) return;  // already on a call screen
+  if ($('view-call').classList.contains('is-active')) {  // already on the call screen: connect the caller straight away
+    if (S.callWS && S.callWS.readyState === 1) { S.callWS.send(JSON.stringify({ type: 'accept' })); } else { S.pendingAccept = true; connectCallWS(); }
+    if (!S.mic) toggleMic();
+    toast('Caller connected to this call'); clog('ring_autoaccepted'); return;
+  }
+  clog('ring_shown', ev.caller_display);
   S.callerDisplay = ev.caller_display || 'Unknown number';
   $('incTitle').textContent = S.callerDisplay; openSheet('incomingSheet'); ringStart(); log('incoming call from ' + S.callerDisplay);
 }
 async function acceptCall() {
-  ringStop(); closeSheet('incomingSheet'); S.pendingAccept = true;
+  ringStop(); closeSheet('incomingSheet'); S.pendingAccept = true; clog('answer_tapped');
   await startCall();
   if (S.callWS && S.callWS.readyState === 1 && S.pendingAccept) { S.pendingAccept = false; S.callWS.send(JSON.stringify({ type: 'accept' })); }
   if (!S.mic) await toggleMic();
@@ -251,9 +257,9 @@ async function toggleMic() {
   if (S.mic) { S.mic.stop(); S.mic = null; setMicUI(false); return; }
   try {
     S.mic = new Mic((int16) => { if (S.callWS && S.callWS.readyState === 1) S.callWS.send(int16.buffer); });
-    await S.mic.start(); setMicUI(true); $('micBanner').hidden = true; log('microphone streaming (16 kHz)');
+    await S.mic.start(); setMicUI(true); $('micBanner').hidden = true; log('microphone streaming (16 kHz)'); clog('mic_ok');
   } catch (e) {
-    S.mic = null; setMicUI(false);
+    S.mic = null; setMicUI(false); clog('mic_error', e.kind || e.message);
     const title = e.kind === 'denied' ? 'Microphone permission was denied' : e.kind === 'nodevice' ? 'No microphone found' : 'Microphone not available';
     const text = e.kind === 'denied' ? 'Rakshak needs the mic only to hear the caller through this phone. Allow the microphone in your browser’s site settings, or run the demo with a scripted caller.' : e.kind === 'unsupported' ? 'This browser cannot capture audio. Use Chrome or Safari, or run the demo with a scripted caller.' : e.message;
     $('micBannerTitle').textContent = title; $('micBannerText').textContent = text; $('micBanner').hidden = false; log('mic error: ' + e.message);

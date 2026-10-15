@@ -44,6 +44,7 @@ class CallSession:
         self.source = "app"
         self.live_call = False
         self.call_accepted = False
+        self.customer_online = 0
         self._analysis_task: asyncio.Task | None = None
         self._last_analysis = 0.0
         self._analysed_turns = 0
@@ -207,6 +208,7 @@ class CallSession:
             "case_ids": self.case_ids,
             "whispered": self.whispered,
             "live_call": self.live_call,
+            "customer_online": self.customer_online > 0,
             "call_accepted": self.call_accepted,
             "transcribers": {r: {"connected": t.connected, "errors": t.errors} for r, t in self.transcribers.items()},
             "profile": self.profile,

@@ -344,8 +344,23 @@ async def eval_latest():
 
 
 # ----------------------------------------------------------------------------- websockets
+class ClientLogIn(BaseModel):
+    event: str
+    detail: str | None = None
+    role: str = "user"
+
+
+@app.post("/api/sessions/{session_id}/clientlog")
+async def client_log(session_id: str, body: ClientLogIn):
+    """Phones report what they saw (page loaded, ring shown, answered, mic denied) so a failed demo can be diagnosed."""
+    s = registry.get_or_create(session_id)
+    log.info("client[%s/%s] %s %s", session_id, body.role, body.event, body.detail or "")
+    s.events.append({"type": "client", "role": body.role, "event": body.event, "detail": body.detail, "ts": time.time()})
+    return {"ok": True}
+
+
 @app.websocket("/ws/events/{session_id}")
-async def ws_events(ws: WebSocket, session_id: str):
+async def ws_events(ws: WebSocket, session_id: str, role: str = ""):
     await ws.accept()
     if session_id == "all":
         registry.global_sockets.add(ws)
@@ -353,6 +368,9 @@ async def ws_events(ws: WebSocket, session_id: str):
     else:
         s = registry.get_or_create(session_id)
         s.ui_sockets.add(ws)
+        if role == "user":
+            s.customer_online += 1
+            await s.broadcast({"type": "presence", "role": "user", "online": True})
         await ws.send_json({"type": "hello", "snapshot": s.snapshot()})
     try:
         while True:
@@ -363,6 +381,11 @@ async def ws_events(ws: WebSocket, session_id: str):
         registry.global_sockets.discard(ws)
         for s in registry.sessions.values():
             s.ui_sockets.discard(ws)
+        if session_id != "all" and role == "user":
+            s = registry.get(session_id)
+            if s:
+                s.customer_online = max(0, s.customer_online - 1)
+                await s.broadcast({"type": "presence", "role": "user", "online": s.customer_online > 0})
 
 
 @app.websocket("/ws/call/{session_id}/{role}")
