@@ -78,12 +78,12 @@ Environment variables the script reads:
 | `SERVICE` | `rakshak` | Service name |
 | `SECRET` | `gemini-api-key` | Secret Manager secret holding the key |
 | `GEMINI_API_KEY` | required only if the secret does not exist yet | Used to create the secret |
-| `USE_FIRESTORE` | `false` | Passed to the service |
+| `USE_FIRESTORE` | `true` | Passed to the service; when `true` the script also creates the `(default)` Firestore database if missing |
 | `BIGQUERY_PAYEE_TABLE` | unset | Passed to the service when set |
 | `TWILIO_DIAL_NUMBER` | unset | Passed to the service when set |
-| `MIN_INSTANCES` / `MAX_INSTANCES` | `1` / `10` | Autoscaling bounds |
+| `MIN_INSTANCES` / `MAX_INSTANCES` | `1` / `1` | Autoscaling bounds (keep max at 1: live call sessions are in memory) |
 
-What it does: enables the APIs, creates the secret if missing, creates the `rakshak-alerts` topic (idempotent), runs `gcloud run deploy --source .` (Cloud Build builds the `Dockerfile`: `python:3.12-slim`, `uv sync --extra gcp`, `uvicorn --ws websockets`), sets `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` (to `$REGION`; only relevant when Vertex is selected, see 3b), `PUBSUB_ALERT_TOPIC`, `USE_FIRESTORE`, mounts the secret, then reads the service URL and writes it back as `PUBLIC_BASE_URL` (used by the Twilio TwiML to build the `wss://` stream URL). The last line prints the three URLs.
+What it does: enables the APIs, creates the secret if missing, creates the `rakshak-alerts` topic (idempotent), creates the Firestore `(default)` database in `$REGION` if missing, grants the runtime service account `roles/secretmanager.secretAccessor` (on the secret), `roles/aiplatform.user` and `roles/datastore.user`, runs `gcloud run deploy --source .` (Cloud Build builds the `Dockerfile`: `python:3.12-slim`, `uv sync --extra gcp`, `uvicorn --ws websockets`), sets `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` (to `$REGION`; only relevant when Vertex is selected, see 3b), `PUBSUB_ALERT_TOPIC`, `USE_FIRESTORE`, mounts the secret, then reads the service URL and writes it back as `PUBLIC_BASE_URL` (used by the Twilio TwiML to build the `wss://` stream URL). The last line prints the three URLs.
 
 ## 5. Verify
 
@@ -98,14 +98,33 @@ Then run the curl flow from the README ("Flow 3") against `$URL`, and open `$URL
 
 ## 6. Firestore (native mode) for durable cases
 
+Enabled on the live service (`USE_FIRESTORE=true`, database `(default)`, `asia-southeast1`). `scripts/deploy.sh` does all of this by default; by hand:
+
 ```bash
+gcloud services enable firestore.googleapis.com --project "$PROJECT"
+gcloud firestore databases list --project "$PROJECT"            # create only if empty:
 gcloud firestore databases create --location="$REGION" --type=firestore-native --project "$PROJECT"
-gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:${RUN_SA}" --role=roles/datastore.user
+RUN_SA="$(gcloud projects describe "$PROJECT" --format 'value(projectNumber)')-compute@developer.gserviceaccount.com"
+gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:${RUN_SA}" --role=roles/datastore.user --condition=None
 gcloud run services update rakshak --project "$PROJECT" --region "$REGION" --update-env-vars USE_FIRESTORE=true
-# or redeploy: USE_FIRESTORE=true ./scripts/deploy.sh
 ```
 
-The app uses the `(default)` database and the collections `rakshak_cases`, `rakshak_profiles`, `rakshak_alerts` (prefix from `FIRESTORE_PREFIX`). On startup it loads existing cases and profiles, then writes through on every change. The log line `Using FirestoreStore` confirms it; `Firestore unavailable (...)` means it fell back to the in-memory JSON store, usually an IAM or database-not-created problem.
+Collections (prefix from `FIRESTORE_PREFIX`, default `rakshak`):
+
+| Collection | Document id | Fields |
+|---|---|---|
+| `rakshak_cases` | `case_id` | `case_id`, `session_id`, `user_id`, `created_at`, `updated_at`, `hold_until` (epoch seconds), `status` (`approved`, `warned`, `on_hold`, `overridden_by_user`, `cancelled_by_user`, `hold_expired`), `payment` {`vpa`, `payee_name`, `amount_inr`}, `rubric` (call risk, scam type, signals, reasons), `payee` (risk band and source), `policy` {`score`, `action`, `reasons`, `call_risk`, `payee_risk`}, `decision` {`action`, `hold_minutes`, `decided_by`, `agent_status`, `user_message`, ...}, `carryover`, `alert`, `narrative`, `trace` (ADK agent steps), `timeline`, `transcript_excerpt`, `profile` (snapshot at payment time) |
+| `rakshak_profiles` | `user_id` | the profile (`name`, `language`, `age_band`, `trusted_contact_name`, `trusted_contact_phone`, `typical_transfer_inr`, `guardian_enabled`, thresholds, `last_high_risk_call` for the post-call carry-over) plus `_edited_fields` and `_updated_at` |
+| `rakshak_alerts` | `alert_id` | `alert_id`, `case_id`, `user_id`, `contact_name`, `contact_phone`, `message`, `created_at`, `channels` (`in_app`, `pubsub`, `sms`) |
+
+How the store behaves (`app/store.py` `FirestoreStore`):
+
+* On startup it loads every case, every profile and the latest 200 alerts into the in-memory cache, which stays the read path. The log line `Firestore loaded N cases, N profiles, N alerts` followed by `Using FirestoreStore` confirms it; `Firestore unavailable (...)` means it fell back to the in-memory JSON store, usually an IAM or database-not-created problem.
+* Every change is snapshotted to plain JSON types on the request thread (sets and tuples become lists, an array inside an array becomes a JSON string, documents over 900 KB drop the agent trace) and written by one background worker thread, so writes stay ordered and the payment hold never waits on Firestore. A failed write is logged (`Firestore write failed`) and the app carries on from memory.
+* The three demo profiles are written on every start. A stored copy of a default field (name, language, contact, thresholds) never overrides the code's defaults unless it was changed through `PUT /api/profiles/{user_id}`; those field names are kept in `_edited_fields`. Extra state such as `last_high_risk_call` is always restored.
+* With `USE_FIRESTORE=true` the local `data/runtime/*.json` files are neither read nor written.
+
+Inspect the data in the console (Firestore, database `(default)`) or with `gcloud firestore export`, or from Python: `firestore.Client(project=...).collection("rakshak_cases").stream()`.
 
 ## 7. BigQuery payee risk table
 
@@ -191,13 +210,21 @@ ngrok http 8080                                   # note the https://xxxx.ngrok.
 # Twilio Voice webhook: https://xxxx.ngrok.app/twilio/voice?session=phone
 ```
 
-## 11. Custom domain or Firebase Hosting front
+## 11. Firebase Hosting front (live) or a custom domain
 
-The pages compute the WebSocket base from `location.host` (`web/common.js`), so the pages and the WebSocket endpoints must be served from the same host.
+Live at https://fde-cloud-run-lab-123456.web.app (also `https://fde-cloud-run-lab-123456.firebaseapp.com`). `firebase.json` serves no static files (`firebase/public` is intentionally empty) and rewrites `**` to the Cloud Run service `rakshak` in `asia-southeast1`, so `/`, `/call`, `/desk`, `/family`, `/scammer`, `/static/*` and `/api/*` all come from Cloud Run; API responses go out with `Cache-Control: private`, so the Hosting CDN does not cache them. Firebase Hosting does not carry WebSocket connections, so `web/common.js` sets `WS_BASE` to `wss://rakshak-223197895518.asia-southeast1.run.app` when the page is opened from `*.web.app` or `*.firebaseapp.com` (FastAPI does not check the WebSocket `Origin`, and CORS is open for the HTTP calls). Call sessions stay consistent because the service runs a single instance. If you redeploy Cloud Run under a different URL, update `CLOUD_RUN_HOST` in `web/common.js`.
 
-* **Cloud Run domain mapping** (simplest, keeps WebSockets):
-  `gcloud beta run domain-mappings create --service rakshak --domain rakshak.example.com --region "$REGION" --project "$PROJECT"` and add the DNS records it prints.
-* **Firebase Hosting rewrite to Cloud Run**: `firebase.json` with `{"hosting": {"rewrites": [{"source": "**", "run": {"serviceId": "rakshak", "region": "asia-southeast1"}}]}}`. Firebase Hosting rewrites do not carry WebSocket connections, so with this front the three `/ws/*` paths would need to point at the `run.app` host (a one-line change to `WS_BASE` in `web/common.js`) and CORS stays open. Prefer the domain mapping or a global external HTTPS load balancer with a serverless NEG, both of which pass WebSockets through.
+```bash
+# one-time: add Firebase to the GCP project and enable the APIs
+gcloud services enable firebase.googleapis.com firebasehosting.googleapis.com --project "$PROJECT"
+npx -y firebase-tools@latest projects:addfirebase "$PROJECT"
+# deploy (re-run only when firebase.json changes; page and API changes ship with the Cloud Run deploy)
+npx -y firebase-tools@latest deploy --only hosting --project "$PROJECT"
+```
+
+`firebase-tools` works without `firebase login` when application default credentials are present: `export GOOGLE_APPLICATION_CREDENTIALS=<adc.json>` and, for user credentials, `export GOOGLE_CLOUD_QUOTA_PROJECT=$PROJECT` (otherwise the Firebase Management API answers 403 "requires a quota project").
+
+Alternatives that pass WebSockets through on one host: a Cloud Run domain mapping (`gcloud beta run domain-mappings create --service rakshak --domain rakshak.example.com --region "$REGION" --project "$PROJECT"` plus the DNS records it prints), or a global external HTTPS load balancer with a serverless NEG.
 
 ## 12. Cost estimate per demo session
 
