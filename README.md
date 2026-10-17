@@ -87,7 +87,7 @@ Then open:
 * `http://localhost:8080/desk` the bank's fraud desk
 * `http://localhost:8080/api/health` reports `llm`, `live`, `vertex` and the configured model ids
 
-On first start with a key, Rakshak pre-generates the hold, warn and whisper clips for the two demo profiles (`RAKSHAK_PREWARM_TTS=1`, cached in `data/tts_cache/`), and the pay screen asks for the clip for the exact amount as soon as it opens, so the barge-in is instant. `uv run pytest` runs the 10 offline tests (they set `RAKSHAK_FAKE_LLM=1` themselves). `uv sync --extra gcp` adds the Firestore, BigQuery and Pub/Sub clients.
+On first start with a key, Rakshak pre-generates the hold, warn and whisper clips for the two demo profiles (`RAKSHAK_PREWARM_TTS=1`, cached in `data/tts_cache/`), and the pay screen asks for the clip for the exact amount as soon as it opens, so the barge-in is instant. `uv run pytest` runs the 16 offline tests (they set `RAKSHAK_FAKE_LLM=1` themselves). `uv sync --extra gcp` adds the Firestore, BigQuery and Pub/Sub clients.
 
 Two things to know before a rehearsal: the free AI Studio tier has small daily request caps on the 3.x models (see section 6 of [docs/DEMO_STRATEGY.md](docs/DEMO_STRATEGY.md)), so enable billing on the AI Studio project or point text, TTS and agent traffic at Vertex AI with `GOOGLE_GENAI_USE_VERTEXAI=true` and `GOOGLE_CLOUD_PROJECT`; and the Live API models (transcription and the post-hold conversation) still use the AI Studio key in that mode unless `RAKSHAK_LIVE_VIA_VERTEX=1` is set, so keep the key configured.
 
@@ -203,7 +203,7 @@ rakshak-agent/
     payees.json          60 synthetic payees with mule features (31 low, 11 medium, 6 high, 12 critical)
     runtime/             cases.json, profiles.json, alerts.json, eval_results.json (git-ignored)
     tts_cache/           cached guardian audio (git-ignored)
-  tests/                 10 offline tests (API flow, policy, audio helpers)
+  tests/                 16 offline tests (API flow, policy, audio helpers, ledger)
   docs/                  ARCHITECTURE, DEPLOYMENT, DECK_OUTLINE, SECURITY_PRIVACY, EVAL_RESULTS, DEMO_STRATEGY, BUILD_PLAN
   Dockerfile, pyproject.toml, uv.lock, .env.example
 ```

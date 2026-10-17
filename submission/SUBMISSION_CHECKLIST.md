@@ -64,7 +64,7 @@ Confirm each point for each member before the form is submitted; the portal's te
 | Judge steps on a clean browser | A non-team member follows the README "60-second self-test" in a private browser window on a phone | Hold screen within a second, Hindi voice audible, case visible on `/desk` | [ ] |
 | Two-phone flow | Phone B `/call?session=x`, phone A `/?session=x&user=demo-user`; Call, Answer, talk, Pay; phone C on `/family` | Both hear each other; transcript labelled; hold and family chime | [ ] |
 | Offline tests | `uv run pytest` | 10 passed | [ ] |
-| Evaluation artefacts committed | `docs/EVAL_RESULTS.md` matches `data/runtime/eval_results.json` (n=50, precision 1.0, recall 1.0, payment accuracy 0.974, signal accuracy 0.932) | Committed | [ ] |
+| Evaluation artefacts committed | `docs/EVAL_RESULTS.md` matches `data/runtime/eval_results.json` (n=50, precision 1.0, recall 1.0, payment accuracy 1.0, signal accuracy 0.932) | Committed | [ ] |
 | README team line and LICENSE | Replace "add names, roles and contact here"; the README's licence paragraph says the `LICENSE` file is missing but the repository root contains it, so fix the sentence | Updated | [ ] |
 | Deck placeholders | Slide 1 and 14 team names; slide 5 screenshot of the hold screen captured from the public URL | Updated and re-rendered to PDF (14 pages) | [ ] |
 | Tag | `git tag -a v1.0 -m "AI Builder Cup 2026 submission" && git push origin v1.0` | Tag visible on GitHub | [ ] |

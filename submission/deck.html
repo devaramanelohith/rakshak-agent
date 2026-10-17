@@ -339,7 +339,7 @@ li { margin-bottom: 14px; }
         <li>Hindi, Hinglish, English, Singapore English, Kannada, Tamil</li>
         <li>10 hard negatives: real police, hospital deposit, harsh landlord, SEBI adviser</li>
         <li>10 rubric-gaming scams: no "arrest", "OTP" or "safe account" said aloud</li>
-        <li>Payment-decision accuracy 0.974: the one miss is a by-design <b>warn</b> on an ambiguous job-scam call</li>
+        <li>Payment-decision accuracy 1.0 on 39 payments (first run 0.974: one ambiguous job-scam call, now a hold after payee-scoring refinement)</li>
         <li>System tests: smoke_ws (API + Live voice), smoke_live_audio (real Hindi speech through the relay, risk 0.9 to 1.0, whisper fired), two-way relay</li>
       </ul>
     </div>
@@ -347,9 +347,9 @@ li { margin-bottom: 14px; }
   <div class="metrics">
     <div class="metric"><div class="v">1.00</div><div class="l">precision</div></div>
     <div class="metric"><div class="v">1.00</div><div class="l">recall / F1</div></div>
-    <div class="metric"><div class="v">0.974</div><div class="l">payment-decision accuracy</div></div>
+    <div class="metric"><div class="v">1.00</div><div class="l">payment-decision accuracy</div></div>
     <div class="metric"><div class="v">0.932</div><div class="l">per-signal accuracy (8 x 50)</div></div>
-    <div class="metric"><div class="v">2.4 s</div><div class="l">mean rubric latency, uncontended (5.3 s contended)</div></div>
+    <div class="metric"><div class="v">3.1 s</div><div class="l">mean rubric latency over 50 calls (median 2.0 s)</div></div>
   </div>
   <div class="footer"><span>scripts/eval.py &middot; data/eval/calls.json &middot; docs/EVAL_RESULTS.md</span><span>10 / 14</span></div>
 </section>

@@ -65,7 +65,7 @@ gcloud run services update rakshak --project "$PROJECT" --region "$REGION" \
 
 ```bash
 cd rakshak-agent
-uv run pytest                                            # 10 offline tests
+uv run pytest                                            # 16 offline tests
 PROJECT=$PROJECT REGION=$REGION GEMINI_API_KEY=$GEMINI_API_KEY ./scripts/deploy.sh
 ```
 

@@ -209,7 +209,7 @@
     "expected_signals": {"authority_impersonation": false, "secrecy": false, "urgency": true, "remote_app_install": false, "safe_account": false, "investment_pressure": true, "otp_or_credential_request": false, "threat_of_arrest_or_harm": false},
     "expected_risk": "medium",
     "payment_attempt": {"vpa": "tasks.hr.payout@rakshakdemo", "payee_name": "Task HR Payout", "amount_inr": 2000, "at_t": 78},
-    "notes": "Early-stage task scam: small trust payout then a first 2,000 'refundable' deposit; weak signals and an unreported medium-risk payee, so expected action is warn rather than hold."
+    "notes": "Ambiguous by design: a small refundable-looking deposit on a job scam. Labelled scam; a hold is scored correct, a warning is a defensible softer outcome and is discussed in the evaluation report (the fused score is the thinnest of all scam payments)."
   },
   {
     "id": "call_010",
