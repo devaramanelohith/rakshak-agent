@@ -93,7 +93,13 @@ function setLinks() {
   [['callerLink', call], ['callerLink2', call], ['familyLink', fam], ['familyLink2', fam]].forEach(([id, href]) => { const el = $(id); if (el) el.href = href; });
 }
 // Everything that shows the customer's name: greeting, customer switch label, document title.
-function renderBalance() { const el = $('balanceText'); if (!el) return; el.textContent = (S.profile && S.profile.language === 'en-sg') ? 'S$48,231' : '₹4,82,310'; }
+const DEMO_PIN = '1234'; let _balTimer = null;
+function balanceValue() { return (S.profile && S.profile.language === 'en-sg') ? 'S$48,231' : '₹4,82,310'; }
+function renderBalance() { const el = $('balanceText'); if (!el) return; el.textContent = S.balanceShown ? balanceValue() : ((S.profile && S.profile.language === 'en-sg') ? 'S$ ••••••' : '₹ ••••••'); $('balanceHint').textContent = S.balanceShown ? 'Available to spend · hides again in 30 s' : 'Hidden. Enter your PIN to view.'; $('btnBalanceText').textContent = S.balanceShown ? 'Hide balance' : 'Show balance'; $('btnBalance').setAttribute('aria-pressed', S.balanceShown ? 'true' : 'false'); setIcon('icoEye', S.balanceShown ? 'eyeOff' : 'eye'); }
+function hideBalance() { S.balanceShown = false; clearTimeout(_balTimer); renderBalance(); }
+function showBalance() { S.balanceShown = true; renderBalance(); clearTimeout(_balTimer); _balTimer = setTimeout(hideBalance, 30000); }
+function askPin() { if (S.balanceShown) return hideBalance(); $('pinInp').value = ''; $('pinErr').hidden = true; setInvalid('pinField', false); openSheet('pinSheet'); }
+function checkPin() { const v = $('pinInp').value.trim(); if (v === DEMO_PIN) { closeSheet('pinSheet'); showBalance(); clog('balance_revealed'); } else { $('pinErr').hidden = false; setInvalid('pinField', true); $('pinInp').value = ''; $('pinInp').focus(); if (navigator.vibrate) navigator.vibrate(120); } }
 function pickScriptForLanguage(sel, scripts) {
   const want = (S.profile && S.profile.language) || 'en';
   const order = want === 'en-sg' ? ['en-sg', 'en'] : want === 'hinglish' ? ['hinglish', 'hi', 'en'] : want === 'hi' ? ['hi', 'hinglish', 'en'] : ['en', 'en-sg'];
@@ -544,6 +550,7 @@ $('btnConfirmNo').onclick = () => closeSheet('confirmSheet');
 $('btnConfirmYes').onclick = () => { if (parseAmount($('confirmAmount').value) !== Number(S.case.payment.amount_inr)) { setInvalid('fConfirm', true); $('confirmAmount').focus(); return; } doOverride('customer typed the amount and confirmed'); };
 $('confirmAmount').addEventListener('input', () => setInvalid('fConfirm', false));
 $('btnTalk').onclick = startTalk; $('btnTalkEnd').onclick = endTalk;
+$('btnBalance').onclick = askPin; $('btnPinOk').onclick = checkPin; $('btnPinCancel').onclick = () => closeSheet('pinSheet'); $('pinInp').addEventListener('keydown', (e) => { if (e.key === 'Enter') checkPin(); }); $('pinInp').addEventListener('input', () => { if ($('pinInp').value.length === 4) checkPin(); });
 $('btnAccept').onclick = acceptCall; $('btnDecline').onclick = declineCall;
 $('btnHome').onclick = () => { endTalk(); show('home'); };
 $('btnDrill').onclick = () => { $('drillSetup').hidden = false; $('drillRun').hidden = true; $('drillSummary').hidden = true; show('drill'); };

@@ -51,7 +51,7 @@
             <div class="status-tile"><span id="gLangIcon"></span><div><div class="strong">Rakshak speaks</div><div class="small muted" id="gLangText">Hindi</div></div></div>
           </div>
         </div>
-        <div class="card"><div class="eyebrow">Savings account</div><div class="balance" aria-label="Balance 4 lakh 82 thousand 310 rupees"><span id="balanceText">₹4,82,310</span></div><div class="small muted">Available to spend</div></div>
+        <div class="card"><div class="cluster" style="justify-content:space-between;align-items:center"><div class="eyebrow">Savings account</div><button class="btn btn--ghost btn--sm" id="btnBalance" type="button" aria-pressed="false"><span id="icoEye"></span><span id="btnBalanceText">Show balance</span></button></div><div class="balance" id="balanceWrap" aria-live="polite"><span id="balanceText">₹ ••••••</span></div><div class="small muted" id="balanceHint">Hidden. Enter your PIN to view.</div></div>
         <button class="btn btn--primary btn--block btn--lg" id="btnPay" type="button"><span id="icoPay"></span>Pay via UPI</button>
         <div class="action-tiles action-tiles--2">
           <button class="action-tile" id="btnIncoming" type="button"><span id="icoIncoming"></span>Test an incoming call</button>
@@ -63,6 +63,7 @@
             <div class="field"><label for="userSel">Customer</label>
               <select id="userSel"><option value="demo-user">Lohith · 25-39 · English</option><option value="demo-user-hi">Sunita Rao · 60+ · Hindi</option><option value="demo-user-en">Daniel Tan · 25-39 · English (Singapore)</option></select></div>
             <div class="eyebrow">Session code</div>
+            <div class="small muted" style="margin:6px 0">Balance PIN for this demo: <code>1234</code></div>
             <button class="btn btn--primary btn--block" id="btnInstall" type="button" hidden>Install SafePay on this phone</button>
             <div class="session-code"><code id="sidText" class="num" aria-live="polite">…</code><button class="btn btn--secondary btn--sm" id="btnCopySid" type="button"><span id="icoCopy"></span>Copy</button></div>
             <div class="small muted">Enter this code on the caller phone to ring this device.</div>
@@ -276,6 +277,15 @@
           <button class="btn btn--danger" id="btnDecline" type="button">Decline</button>
           <button class="btn btn--safe" id="btnAccept" type="button">Answer</button>
         </div>
+      </div>
+    </div>
+    <div class="sheet" id="pinSheet" role="dialog" aria-modal="true" aria-labelledby="pinTitle">
+      <div class="sheet__panel">
+        <div class="sheet__grab" aria-hidden="true"></div>
+        <h2 class="sheet__title" id="pinTitle">Enter your PIN</h2>
+        <p class="small muted">Your balance stays hidden until you confirm it is you. The PIN is never shown on screen.</p>
+        <div class="field" id="pinField"><label for="pinInp">4-digit PIN</label><input id="pinInp" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-describedby="pinErr"><div class="field__error" id="pinErr" hidden>That PIN is not right. Try again.</div></div>
+        <div class="cluster" style="gap:10px;margin-top:8px"><button class="btn btn--ghost" id="btnPinCancel" type="button">Cancel</button><button class="btn btn--primary" id="btnPinOk" type="button">Show balance</button></div>
       </div>
     </div>
     <div class="sheet" id="confirmSheet" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">

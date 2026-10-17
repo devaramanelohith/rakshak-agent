@@ -97,7 +97,7 @@ Two things to know before a rehearsal: the free AI Studio tier has small daily r
 
 **Live two-phone call** (the stage demo): the customer phone (phone A) opens `/?session=<code>&user=demo-user` (English; `&user=demo-user-hi` switches the customer to Hindi), for example `/?session=judge2&user=demo-user`; phone B opens `/call?session=judge2`, checks the pill says "customer's phone: open", and taps **Call**. Phone A rings; tap **Answer** and allow the microphone on both. Talk; phone B plays a scammer (or taps "Say" lines in the prompter). Pay from phone A when asked. A third phone on `/family?user=demo-user` receives the trusted-contact alert.
 
-Three demo customers exist: `demo-user` (Lohith, English, trusted contact Priya, typical transfer Rs 4,000; the default), `demo-user-hi` (Sunita Rao, 60+, Hindi, trusted contact Priya) and `demo-user-en` (Daniel Tan, Singapore English, trusted contact Mei). Switch with the dropdown on the home screen. Every payee handle ends in `@rakshakdemo`, a suffix that does not exist on UPI.
+The account balance is hidden until the customer enters their PIN (demo PIN `1234`, verified client-side here; a bank verifies it server-side); it re-hides after 30 seconds. Three demo customers exist: `demo-user` (Lohith, English, trusted contact Priya, typical transfer Rs 4,000; the default), `demo-user-hi` (Sunita Rao, 60+, Hindi, trusted contact Priya) and `demo-user-en` (Daniel Tan, Singapore English, trusted contact Mei). Switch with the dropdown on the home screen. Every payee handle ends in `@rakshakdemo`, a suffix that does not exist on UPI.
 
 ### Flow 1: scripted scam call, then pay (the main demo)
 
