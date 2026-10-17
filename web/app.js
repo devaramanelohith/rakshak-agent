@@ -15,7 +15,8 @@ const T = {
   ta: { holdTitle: 'உங்கள் பாதுகாப்பிற்காக பணப்பரிமாற்றம் நிறுத்தப்பட்டது', warnTitle: 'இந்த பணப்பரிமாற்றத்தை மீண்டும் சரிபார்க்கவும்', sentTitle: 'பணம் அனுப்பப்பட்டது', cancelledTitle: 'பணப்பரிமாற்றம் ரத்து', drillQ: 'நீங்கள் என்ன செய்வீர்கள்?', hangup: 'அழைப்பைத் துண்டிக்கவும்', hangupD: 'இப்போதே அழைப்பை முடிக்கவும்', verify: 'முதலில் சரிபார்க்கவும்', verifyD: 'அதிகாரப்பூர்வ எண்ணுக்கோ குடும்பத்தினருக்கோ முதலில் அழைப்பதாகச் சொல்லுங்கள்', comply: 'அவர்கள் சொல்வதைச் செய்யுங்கள்', complyD: 'அழைப்பாளரின் வழிமுறைகளைப் பின்பற்றுங்கள்', listening: 'ரக்ஷக் கேட்டுக்கொண்டிருக்கிறது', coachTitle: 'இந்த அழைப்பில் ரக்ஷக் கவனித்தது', good: 'சரியான முடிவு', ok: 'பின்பற்றுவதை விடப் பாதுகாப்பானது', bad: 'ஆபத்தானது' },
 };
 const LANG_NAMES = { hi: 'Hindi', hinglish: 'Hinglish', en: 'English', 'en-sg': 'English (Singapore)', kn: 'Kannada', ta: 'Tamil' };
-const TIER_TEXT = { 0: 'Privacy tier 0 · no audio, call-state + payee check only', 1: 'Privacy tier 1 · transcript stays on this phone until you pay', 2: 'Privacy tier 2 · cloud analysis (this demo)' };
+const TIER_TEXT = { 0: 'No audio · call state and payee check only', 1: 'On this phone only · nothing leaves it until you pay', 2: 'Cloud analysis' };
+const GREETING = { hi: 'नमस्ते', hinglish: 'Namaste', en: 'Hello', 'en-sg': 'Hello', kn: 'ನಮಸ್ಕಾರ', ta: 'வணக்கம்' };
 const LISTEN_TEXT = { 0: 'Call state only', 1: 'On-device transcript', 2: null };
 const SIGNAL_LABELS = { authority_impersonation: 'Claims authority', secrecy: 'Demands secrecy', urgency: 'Rushing you', remote_app_install: 'Screen-share app', safe_account: '“Safe account”', investment_pressure: 'Investment pressure', otp_or_credential_request: 'Asks for OTP / PIN', threat_of_arrest_or_harm: 'Threatens arrest' };
 const SIGNAL_ICONS = { authority_impersonation: 'user', secrecy: 'lock', urgency: 'clock', remote_app_install: 'tool', safe_account: 'database', investment_pressure: 'sparkles', otp_or_credential_request: 'lock', threat_of_arrest_or_harm: 'alert' };
@@ -47,7 +48,7 @@ function amountWords(n) { if (!n) return ''; if (n >= 1e7) return `${+(n / 1e7).
 function setInvalid(fieldId, bad) { $(fieldId).classList.toggle('is-invalid', !!bad); const inp = $(fieldId).querySelector('input'); if (inp) inp.setAttribute('aria-invalid', bad ? 'true' : 'false'); }
 setInterval(() => { $('clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }, 1000);
 
-const ICON_SLOTS = { gCardIco: 'shield', icoPay: 'pay', icoIncoming: 'phone', icoDrill: 'graduation', icoDesk: 'list', callerAvatar: 'user', whisperIco: 'ear', audioIco: 'volumeX', trEmptyIco: 'message', micIco: 'micOff', icoMic: 'mic', icoReplay: 'play', icoOpenPay: 'pay', icoEnd: 'phoneOff', icoBack: 'arrowLeft', payCallIco: 'phone', icoSend: 'pay', holdIco: 'shield', icoVoice: 'volume', evCallIco: 'phone', evPayeeIco: 'database', alertIco: 'bell', talkIco: 'speak', talkErrIco: 'warn', icoCancel: 'xCircle', icoTalk: 'speak', doneIco: 'checkCircle', icoDrillBack: 'arrowLeft', drillInfoIco: 'info', icoDrillStart: 'play', drillQIco: 'question', drillFbIco: 'info', drillSumIco: 'graduation', obIco1: 'ear', obIco2: 'hand', obIco3: 'users', confirmIco: 'alert', brandIco: 'shield', gLangIcon: 'speak', gContactIcon: 'users' };
+const ICON_SLOTS = { gCardIco: 'shield', icoPay: 'pay', icoIncoming: 'phone', icoDrill: 'graduation', icoDesk: 'list', icoDev: 'tool', icoCopy: 'copy', icoCallerLink: 'phone', icoFamilyLink: 'users', icoReOnboard: 'replay', callerAvatar: 'user', whisperIco: 'ear', audioIco: 'volumeX', trEmptyIco: 'message', micIco: 'micOff', icoMic: 'mic', icoReplay: 'play', icoOpenPay: 'pay', icoEnd: 'phoneOff', icoBack: 'arrowLeft', payCallIco: 'phone', icoSend: 'pay', holdIco: 'shield', icoVoice: 'volume', evCallIco: 'phone', evPayeeIco: 'database', alertIco: 'bell', talkIco: 'speak', talkErrIco: 'warn', icoCancel: 'xCircle', icoTalk: 'speak', doneIco: 'checkCircle', icoDrillBack: 'arrowLeft', drillInfoIco: 'info', icoDrillStart: 'play', drillQIco: 'question', drillFbIco: 'info', drillSumIco: 'graduation', obIco1: 'ear', obIco2: 'hand', obIco3: 'users', confirmIco: 'alert', brandIco: 'shield', gLangIcon: 'speak', gContactIcon: 'users' };
 Object.entries(ICON_SLOTS).forEach(([id, n]) => setIcon(id, n));
 
 // ---------- init / session ----------
@@ -59,9 +60,7 @@ async function init() {
     S.sid = snap.session_id; S.profile = snap.profile;
     S.scripts = await api('/api/scripts');
   } catch (e) { renderBootError(e); return; }
-  $('sidText').textContent = S.sid;
-  const link = `/scammer?session=${S.sid}`; $('scammerLink').href = link; $('scammerLink2').href = link; if ($('callerLink')) $('callerLink').href = `/call?session=${S.sid}`; if ($('familyLink')) $('familyLink').href = `/family?user=${S.userId}`;
-  $('homeName').textContent = `Namaste, ${S.profile.name}`;
+  setLinks(); renderIdentity();
   const opts = S.scripts.map(s => `<option value="${s.id}">${esc(s.title)} (${s.language})</option>`).join('');
   $('scriptSel').innerHTML = opts; $('drillScriptSel').innerHTML = opts;
   renderGuardianCard(); setListening(false);
@@ -84,8 +83,21 @@ async function newSession() {
   S.sid = snap.session_id; S.lastRubric = null; S.replayPayment = null; S.case = null;
   if (S.callWS) { try { S.callWS.close(); } catch (e) {} S.callWS = null; }
   S.evGen++; if (S.evWS) { try { S.evWS.close(); } catch (e) {} }
-  $('sidText').textContent = S.sid; const link = `/scammer?session=${S.sid}`; $('scammerLink').href = link; $('scammerLink2').href = link; if ($('callerLink')) $('callerLink').href = `/call?session=${S.sid}`; if ($('familyLink')) $('familyLink').href = `/family?user=${S.userId}`;
-  resetCallUI(); connectEvents(); log(`new session ${S.sid}`);
+  setLinks(); resetCallUI(); connectEvents(); log(`new session ${S.sid}`);
+}
+// Session code and the links other devices use; re-run whenever the session or the customer changes.
+function setLinks() {
+  $('sidText').textContent = S.sid;
+  const call = `/call?session=${S.sid}`, fam = `/family?user=${S.userId}`;
+  [['callerLink', call], ['callerLink2', call], ['familyLink', fam], ['familyLink2', fam]].forEach(([id, href]) => { const el = $(id); if (el) el.href = href; });
+}
+// Everything that shows the customer's name: greeting, customer switch label, document title.
+function renderIdentity() {
+  const p = S.profile || {}; const name = p.name || S.userId;
+  $('homeName').textContent = `${GREETING[p.language] || GREETING.en}, ${name}`;
+  const label = (pr) => [pr.name || pr.user_id, pr.age_band, LANG_NAMES[pr.language] || pr.language].filter(Boolean).join(' · ');
+  [...$('userSel').options].forEach(opt => { if (opt.value === S.userId) opt.textContent = label(p); else api(`/api/profiles/${opt.value}`).then(pr => { opt.textContent = label(pr); }).catch(() => {}); });
+  document.title = `SafePay · ${name}`;
 }
 
 // ---------- events ----------
@@ -167,7 +179,7 @@ function setListening(active) {
 // ---------- onboarding ----------
 let obStep = 1;
 function startOnboarding(step = 1) {
-  const p = S.profile; $('obContact').value = p.trusted_contact_name || ''; $('obLang').value = p.language || 'hi'; $('obGuardian').checked = !!p.guardian_enabled;
+  const p = S.profile; $('obName').value = p.name || ''; $('obContact').value = p.trusted_contact_name || ''; $('obLang').value = p.language || 'hi'; $('obGuardian').checked = !!p.guardian_enabled;
   const tr = document.querySelector(`input[name=tier][value="${tier()}"]`); if (tr) tr.checked = true;
   obStep = step; renderObStep(); openSheet('onboardSheet');
 }
@@ -182,9 +194,10 @@ function renderObStep() {
 async function finishOnboarding() {
   const tierVal = Number((document.querySelector('input[name=tier]:checked') || {}).value ?? 2);
   try {
-    S.profile = await api(`/api/profiles/${S.userId}`, 'PUT', { language: $('obLang').value, trusted_contact_name: $('obContact').value.trim(), guardian_enabled: $('obGuardian').checked, privacy_tier: tierVal });
+    const name = $('obName').value.trim() || (S.profile && S.profile.name) || S.userId;
+    S.profile = await api(`/api/profiles/${S.userId}`, 'PUT', { name, language: $('obLang').value, trusted_contact_name: $('obContact').value.trim(), guardian_enabled: $('obGuardian').checked, privacy_tier: tierVal });
   } catch (e) { toast('Could not save: ' + e.message); return; }
-  localStorage.setItem(ONBOARD_KEY(), '1'); renderGuardianCard(); setListening(S.callActive); closeSheet('onboardSheet'); toast('Guardian settings saved');
+  localStorage.setItem(ONBOARD_KEY(), '1'); renderIdentity(); renderGuardianCard(); setListening(S.callActive); closeSheet('onboardSheet'); toast('Settings saved'); log(`profile saved for ${S.profile.name}`);
 }
 $('obNext').onclick = () => { if (obStep < 3) { obStep++; renderObStep(); } else finishOnboarding(); };
 $('obBack').onclick = () => { if (obStep === 1) { localStorage.setItem(ONBOARD_KEY(), '1'); closeSheet('onboardSheet'); } else { obStep--; renderObStep(); } };
@@ -340,6 +353,7 @@ function renderHold(c, spoken) {
   ];
   $('payeeCard').innerHTML = rows.map(([k, v, cls]) => `<dt>${k}</dt><dd class="${cls}">${esc(v)}</dd>`).join('');
   $('payeeLineage').innerHTML = `${icon('database')} ${esc(lineageText(p))}`; $('payeeLineage').style.display = 'flex'; $('payeeLineage').style.gap = '6px'; $('payeeLineage').style.alignItems = 'center';
+  renderLedgerLine();
   // trusted contact
   if (c.alert) { $('alertLine').hidden = false; $('alertText').innerHTML = `<b>${esc(c.alert.contact_name)}</b> has been told (${c.alert.channels.map(x => x.replace('_', '-')).join(', ')}). Ask them before you do anything else.`; }
   else if (d.notify_trusted_contact) { $('alertLine').hidden = false; $('alertText').innerHTML = `<span class="spinner"></span> Telling ${esc(S.profile.trusted_contact_name || 'your trusted contact')}…`; }
@@ -353,6 +367,15 @@ function renderHold(c, spoken) {
     const tick = () => { const s = Math.max(0, Math.floor((end - Date.now()) / 1000)); $('countdown').firstChild.textContent = fmtClock(s); };
     $('countdown').firstChild.textContent = '30:00'; tick(); S.countdownT = setInterval(tick, 1000); $('countdownLbl').textContent = 'until this hold expires'; $('countdown').style.display = '';
   } else { $('countdown').style.display = 'none'; }
+}
+// Live ledger stats under the payee card so the evidence is visibly computed from a moving ledger.
+async function renderLedgerLine() {
+  const el = $('payeeLedger'); if (!el) return;
+  try {
+    const s = await api('/api/ledger/stats');
+    if (!s || s.enabled === false || s.tx_in_window == null) { el.hidden = true; return; }
+    el.innerHTML = `${icon('bolt')}<span>Live ledger: ${fmtIndian(s.tx_in_window)} transactions in window · ${s.tx_last_minute ?? 0} in the last minute · refreshed ${s.last_tick ? relTime(s.last_tick) : 'just now'}</span>`; el.hidden = false;
+  } catch (e) { el.hidden = true; }
 }
 function lineageText(p) {
   const L = p.lineage;
@@ -522,5 +545,6 @@ $('btnDrillBack').onclick = async () => { await drillLeave(); show('home'); };
 $('btnDrillAgain').onclick = async () => { await drillLeave(); };
 $('btnDrillHome').onclick = async () => { await drillLeave(); show('home'); };
 $('userSel').onchange = () => { location.search = `?user=${$('userSel').value}`; };
+$('btnCopySid').onclick = () => copyText(S.sid || '', $('btnCopySid'));
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if ($('confirmSheet').classList.contains('is-open')) closeSheet('confirmSheet'); } });
 init().catch(e => { log('init failed: ' + e.message); renderBootError(e); });

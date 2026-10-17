@@ -442,6 +442,59 @@ th { color: var(--c-text-3); font-weight: 700; font-size: var(--fs-xs); text-tra
   .side { display: none; }
 }
 
+/* Home action tiles (two per row) and developer options */
+.action-tiles--2 { grid-template-columns: 1fr 1fr; }
+.session-code { display: flex; align-items: center; gap: var(--sp-2); margin: 6px 0 var(--sp-2); }
+.session-code code { flex: 1; font-size: var(--fs-xl); font-weight: 800; letter-spacing: .08em; padding: 8px 12px; border-radius: var(--r-md); background: var(--c-surface-2); border: 1px dashed var(--c-border-strong); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.dev-links { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); margin-top: var(--sp-2); }
+.dev-links .btn { font-size: var(--fs-sm); }
+.ledger-line { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+
+/* ---------- 4b. Caller phone (caller.html): full-screen dialer, framed on desktop ---------- */
+.dial-stage { min-height: 100dvh; display: flex; justify-content: center; align-items: flex-start; }
+.dial { width: 100%; min-height: 100dvh; display: flex; flex-direction: column; gap: var(--sp-3); padding: calc(var(--sp-3) + env(safe-area-inset-top)) var(--sp-4) calc(var(--sp-4) + env(safe-area-inset-bottom)); position: relative; background: var(--c-bg); }
+.dial__head .brand { font-size: var(--fs-md); }
+.dial__head p { font-size: var(--fs-xs); }
+.dial__pills { margin-top: var(--sp-2); }
+.dial__contact { text-align: center; }
+.dial__ring { position: relative; width: 108px; height: 108px; margin: 0 auto var(--sp-2); }
+.dial__ringSvg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.dial__ringTrack { fill: none; stroke: var(--c-surface-3); stroke-width: 5; }
+.dial__ringLvl { fill: none; stroke: var(--c-proceed); stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 90ms linear; }
+.dial__avatar { position: absolute; inset: 12px; border-radius: 50%; background: var(--c-primary-soft); color: var(--c-primary-ink); display: grid; place-items: center; font-size: 34px; font-weight: 800; letter-spacing: .02em; }
+.dial__name { font-size: var(--fs-2xl); font-weight: 800; line-height: var(--lh-tight); overflow-wrap: anywhere; }
+.dial__sub { color: var(--c-text-3); font-size: var(--fs-sm); margin-top: 4px; }
+.dial__status { font-size: var(--fs-xl); font-weight: 700; margin-top: var(--sp-3); color: var(--c-text-2); min-height: 1.3em; }
+.dial__status.is-ringing { color: var(--c-info-ink); animation: pulse 1.6s ease-in-out infinite; }
+.dial__status.is-live { color: var(--c-proceed-ink); }
+.dial__status.is-ended { color: var(--c-text-3); }
+.dial__hint { color: var(--c-text-3); font-size: var(--fs-sm); margin: 4px auto 0; max-width: 34ch; }
+.dial__presence { margin-top: var(--sp-2); }
+.dial__presence .pill { font-size: var(--fs-sm); min-height: 36px; padding: 6px 14px; white-space: normal; text-align: center; }
+.dial__setup { display: grid; grid-template-columns: 1.1fr .9fr; gap: var(--sp-3); }
+.dial__setup .field { margin-bottom: 0; }
+.dial__setup .field__hint { grid-column: 1 / -1; }
+.dial__pad { margin-top: auto; }
+.dial__keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.dial__key { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.dial__keyLbl { font-size: var(--fs-xs); font-weight: 700; color: var(--c-text-2); letter-spacing: .04em; text-transform: uppercase; }
+.round { width: 76px; height: 76px; border-radius: 50%; border: 0; display: grid; place-items: center; background: var(--c-surface-3); color: var(--c-text); box-shadow: var(--sh-1); transition: transform var(--dur) var(--ease), background var(--dur), opacity var(--dur); }
+.round .ico { width: 32px; height: 32px; }
+.round:active:not(:disabled) { transform: scale(.94); }
+.round:disabled { opacity: .4; cursor: not-allowed; }
+.round[aria-pressed="true"] { background: var(--c-text); color: var(--c-inverse); }
+.round--call { background: var(--c-proceed); color: #fff; }
+.round--end { background: var(--c-hold); color: #fff; }
+.round--call:disabled, .round--end:disabled { opacity: .35; }
+.prompter > summary .ico { width: 20px; height: 20px; }
+.prompter__steps { max-height: 38vh; }
+.prompter .step { grid-template-columns: 24px 1fr auto; }
+@media (prefers-color-scheme: dark) { .round--call, .round--end { color: #0d1219; } }
+@media (min-width: 761px) {
+  .dial-stage { padding: var(--sp-6); align-items: center; }
+  .dial { width: 390px; min-height: 0; height: 820px; max-height: calc(100vh - 48px); overflow-y: auto; border-radius: 40px; box-shadow: 0 30px 80px rgba(0,0,0,.35), 0 0 0 12px #111, 0 0 0 14px #333; padding: var(--sp-5) var(--sp-4) var(--sp-5); }
+}
+
 /* ---------- 5. Operator layouts ------------------------------------------- */
 .op { display: grid; grid-template-columns: 400px 1fr; gap: var(--sp-4); padding: var(--sp-4); min-height: 100vh; }
 .op__col { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; }

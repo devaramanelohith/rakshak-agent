@@ -39,27 +39,31 @@
         <div class="card" id="guardianCard" aria-labelledby="guardianCardTitle">
           <div class="between"><div class="card__title" id="guardianCardTitle" style="margin:0"><span id="gCardIco"></span>Rakshak guardian</div><button class="btn btn--ghost btn--sm" id="btnEditGuardian" type="button">Edit</button></div>
           <div class="stack-sm" style="margin-top:8px">
-            <div class="status-tile"><span id="gStatusIcon"></span><div><div class="strong" id="gStatusText">Guardian mode is on</div><div class="small muted" id="gTierText">Privacy tier 2 · cloud analysis (demo)</div></div></div>
+            <div class="status-tile"><span id="gStatusIcon"></span><div><div class="strong" id="gStatusText">Guardian mode is on</div><div class="small muted" id="gTierText">Cloud analysis</div></div></div>
             <div class="status-tile"><span id="gContactIcon"></span><div><div class="strong">Trusted contact</div><div class="small muted" id="gContactText">Priya (daughter)</div></div></div>
             <div class="status-tile"><span id="gLangIcon"></span><div><div class="strong">Rakshak speaks</div><div class="small muted" id="gLangText">Hindi</div></div></div>
           </div>
         </div>
         <div class="card"><div class="eyebrow">Savings account</div><div class="balance" aria-label="Balance 4 lakh 82 thousand 310 rupees">₹4,82,310</div><div class="small muted">Available to spend</div></div>
         <button class="btn btn--primary btn--block btn--lg" id="btnPay" type="button"><span id="icoPay"></span>Pay via UPI</button>
-        <div class="action-tiles">
-          <button class="action-tile" id="btnIncoming" type="button"><span id="icoIncoming"></span>Simulate incoming call</button>
+        <div class="action-tiles action-tiles--2">
+          <button class="action-tile" id="btnIncoming" type="button"><span id="icoIncoming"></span>Test an incoming call</button>
           <button class="action-tile" id="btnDrill" type="button"><span id="icoDrill"></span>Practice drill</button>
-          <a class="action-tile" href="/desk" target="_blank" rel="noopener" id="lnkDesk"><span id="icoDesk"></span>Fraud desk</a>
         </div>
-        <details class="collapse">
-          <summary>Demo controls</summary>
+        <details class="collapse" id="devOptions">
+          <summary><span id="icoDev"></span>Developer options</summary>
           <div class="collapse__body">
-            <div class="field"><label for="userSel">Demo customer</label>
-              <select id="userSel"><option value="demo-user">Sunita Rao · 60+ · Hindi · trusted: Priya (daughter)</option><option value="demo-user-en">Daniel Tan · 25-39 · Singapore English · trusted: Mei (spouse)</option></select></div>
-            <div class="small muted">Session <b id="sidText" class="mono">…</b></div>
-            <div class="small muted">Caller console: <a id="scammerLink" target="_blank" rel="noopener">open on another device</a></div>
-            <div class="small muted">Live two-device demo: caller phone <a id="callerLink" target="_blank" rel="noopener">/call</a> · family phone <a id="familyLink" target="_blank" rel="noopener">/family</a></div>
-            <button class="btn btn--ghost btn--sm" id="btnReOnboard" type="button" style="margin-top:8px">Show onboarding again</button>
+            <div class="field"><label for="userSel">Customer</label>
+              <select id="userSel"><option value="demo-user">Sunita Rao · 60+ · Hindi</option><option value="demo-user-en">Daniel Tan · 25-39 · English (Singapore)</option></select></div>
+            <div class="eyebrow">Session code</div>
+            <div class="session-code"><code id="sidText" class="num" aria-live="polite">…</code><button class="btn btn--secondary btn--sm" id="btnCopySid" type="button"><span id="icoCopy"></span>Copy</button></div>
+            <div class="small muted">Enter this code on the caller phone to ring this device.</div>
+            <div class="dev-links">
+              <a class="btn btn--secondary btn--sm" id="callerLink" target="_blank" rel="noopener"><span id="icoCallerLink"></span>Caller phone</a>
+              <a class="btn btn--secondary btn--sm" id="familyLink" target="_blank" rel="noopener"><span id="icoFamilyLink"></span>Family phone</a>
+              <a class="btn btn--secondary btn--sm" href="/desk" target="_blank" rel="noopener" id="lnkDesk"><span id="icoDesk"></span>Fraud desk</a>
+              <button class="btn btn--secondary btn--sm" id="btnReOnboard" type="button"><span id="icoReOnboard"></span>Onboarding</button>
+            </div>
           </div>
         </details>
       </div>
@@ -109,7 +113,7 @@
         <div class="card" aria-labelledby="ctlTitle">
           <div class="card__title" id="ctlTitle">Call controls</div>
           <div class="btn-row"><button class="btn btn--secondary" id="btnMic" type="button" aria-pressed="false"><span id="icoMic"></span>Use my mic</button></div>
-          <div class="field" style="margin-top:12px"><label for="scriptSel">Scripted caller (demo)</label><select id="scriptSel"></select></div>
+          <div class="field" style="margin-top:12px"><label for="scriptSel">Play a scripted caller</label><select id="scriptSel"></select></div>
           <div class="btn-row"><button class="btn btn--secondary" id="btnReplay" type="button"><span id="icoReplay"></span>Auto-play script</button><button class="btn btn--ghost" id="btnReplayStop" type="button">Stop</button></div>
         </div>
       </div>
@@ -155,6 +159,7 @@
           <div class="small muted mono" id="payeeVpa" style="margin:4px 0 8px"></div>
           <dl class="kv" id="payeeCard"></dl>
           <div class="small muted" id="payeeLineage" style="margin-top:10px"></div>
+          <div class="small muted ledger-line" id="payeeLedger" hidden></div>
         </div>
         <div class="card" id="alertLine" hidden><div class="card__title"><span id="alertIco"></span>Trusted contact</div><div id="alertText"></div></div>
 
@@ -235,13 +240,14 @@
           <h2 class="sheet__title" style="margin-top:12px">How much should Rakshak hear?</h2>
           <p class="small muted">Choose your privacy level. You can change it any time.</p>
           <div class="tier" role="radiogroup" aria-label="Privacy tier">
-            <label class="choice"><input type="radio" name="tier" value="0"><div><div class="choice__title">Tier 0 · No audio</div><div class="choice__desc">Rakshak only knows that a call is on and checks the payee when you pay. Nothing is recorded.</div></div></label>
-            <label class="choice"><input type="radio" name="tier" value="1"><div><div class="choice__title">Tier 1 · On this phone only</div><div class="choice__desc">The call is written down on your phone. Nothing leaves it until you try to pay.</div></div></label>
-            <label class="choice"><input type="radio" name="tier" value="2" checked><div><div class="choice__title">Tier 2 · Cloud analysis (this demo)</div><div class="choice__desc">The call is analysed on the bank's servers as it happens, so Rakshak can warn you before you pay. Audio is not kept.</div></div></label>
+            <label class="choice"><input type="radio" name="tier" value="0"><div><div class="choice__title">No audio</div><div class="choice__desc">Rakshak only knows that a call is on and checks the payee when you pay. Nothing is recorded.</div></div></label>
+            <label class="choice"><input type="radio" name="tier" value="1"><div><div class="choice__title">On this phone only</div><div class="choice__desc">The call is written down on your phone. Nothing leaves it until you try to pay.</div></div></label>
+            <label class="choice"><input type="radio" name="tier" value="2" checked><div><div class="choice__title">Cloud analysis</div><div class="choice__desc">The call is analysed on the bank's servers as it happens, so Rakshak can warn you before you pay. Audio is not kept.</div></div></label>
           </div>
         </div>
         <div class="onboard-step" data-step="3">
-          <h2 class="sheet__title" style="margin-top:12px">Who should Rakshak tell?</h2>
+          <h2 class="sheet__title" style="margin-top:12px">About you</h2>
+          <div class="field"><label for="obName">Your name</label><input id="obName" placeholder="As on your account" autocomplete="name"><div class="field__hint">Rakshak uses it when it speaks to you and when it tells your trusted contact.</div></div>
           <div class="field"><label for="obContact">Trusted contact</label><input id="obContact" placeholder="e.g. Priya (daughter)" autocomplete="off"><div class="field__hint">They are told only when a payment is paused.</div></div>
           <div class="field"><label for="obLang">Rakshak speaks to you in</label>
             <select id="obLang"><option value="hi">Hindi · हिन्दी</option><option value="hinglish">Hinglish</option><option value="en">English</option><option value="en-sg">English (Singapore)</option><option value="kn">Kannada · ಕನ್ನಡ</option><option value="ta">Tamil · தமிழ்</option></select></div>
@@ -277,8 +283,8 @@
   </main></div>
 
   <aside class="side" aria-label="Demo notes">
-    <div class="card"><div class="brand"><span class="mark" id="brandIco"></span>Rakshak</div><p class="small muted" style="margin-top:8px">This phone is the customer's bank app. Join as the caller from <a id="scammerLink2" target="_blank" rel="noopener">/scammer</a> on another device or tab, or auto-play a script. The payment screen is where Rakshak acts.</p>
-      <div class="small muted">Fraud desk: <a href="/desk" target="_blank" rel="noopener">/desk</a></div></div>
+    <div class="card"><div class="brand"><span class="mark" id="brandIco"></span>Rakshak</div><p class="small muted" style="margin-top:8px">This phone is the customer's bank app. To run a live call, open the caller phone at <a id="callerLink2" target="_blank" rel="noopener">/call</a> on another device or tab and enter the session code shown under Developer options, or auto-play a script from the call screen. The payment screen is where Rakshak acts.</p>
+      <div class="small muted">Family phone: <a id="familyLink2" target="_blank" rel="noopener">/family</a> · Fraud desk: <a href="/desk" target="_blank" rel="noopener">/desk</a></div></div>
     <div class="card"><div class="card__title">Event log</div><div class="log" id="log" aria-live="off"></div></div>
   </aside>
 </div>

@@ -3,69 +3,121 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Caller phone · Rakshak demo</title>
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f3f5f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1219" media="(prefers-color-scheme: dark)">
+<title>Caller phone · Rakshak live-call test line</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="/static/styles.css">
-<style>
-  .dial { min-height: 100dvh; display: flex; flex-direction: column; justify-content: space-between; padding: 24px 20px calc(24px + env(safe-area-inset-bottom)); max-width: 420px; margin: 0 auto; }
-  .avatar { width: 92px; height: 92px; border-radius: 50%; background: var(--c-surface-2); display: grid; place-items: center; margin: 0 auto 12px; font-size: 36px; }
-  .big-num { font-size: var(--fs-2xl); font-weight: 700; text-align: center; }
-  .state { text-align: center; color: var(--c-text-2); margin-top: 6px; min-height: 24px; }
-  .dialpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 18px 0; }
-  .round { width: 72px; height: 72px; border-radius: 50%; border: 0; display: grid; place-items: center; margin: 0 auto; font-weight: 600; cursor: pointer; background: var(--c-surface-2); color: var(--c-text); }
-  .round.green { background: #1e9e5a; color: #fff; } .round.red { background: #e5484d; color: #fff; } .round[aria-pressed="true"] { outline: 3px solid var(--c-primary); }
-  .round svg { width: 28px; height: 28px; }
-  .prompter { margin-top: 12px; }
-  .prompter .line { padding: 8px 10px; border-radius: 10px; margin: 6px 0; background: var(--c-surface-2); font-size: var(--fs-sm); display: flex; gap: 8px; }
-  .prompter .line.user { opacity: .6; } .prompter .line .n { color: var(--c-text-3); min-width: 20px; }
-  .prompter .line button { margin-left: auto; }
-  .vu { height: 6px; background: var(--c-surface-3); border-radius: 999px; overflow: hidden; margin: 8px auto 0; width: 60%; } .vu > div { height: 100%; width: 0; background: var(--c-primary); transition: width .08s; }
-</style>
 </head>
 <body>
-<main class="dial">
-  <div>
-    <div class="cluster" style="justify-content:space-between"><span class="pill pill--outline" id="connPill">not connected</span><span class="pill" id="sessPill">session: –</span><span class="pill pill--outline" id="custPill">customer's phone: ?</span></div>
-    <div style="margin-top:28px">
-      <div class="avatar">👤</div>
-      <div class="big-num" id="target">Sunita Rao</div>
-      <div class="state" id="state">Enter the session code from the customer's phone, then tap Call.</div>
-      <div class="vu" aria-hidden="true"><div id="vu"></div></div>
-    </div>
-    <div class="field" style="margin-top:18px" id="sessField">
-      <label for="sessInp">Session code</label>
-      <input id="sessInp" placeholder="e.g. 4f3a9c1b" autocomplete="off" autocapitalize="off">
-      <div class="small muted">Shown under “Demo controls” on the customer's phone.</div>
-    </div>
-    <div class="field" id="nameField">
-      <label for="dispInp">Show my number as</label>
-      <input id="dispInp" value="+91 98765 00301" autocomplete="off">
-    </div>
-  </div>
+<div class="dial-stage">
+  <main class="dial" id="dial" aria-label="Caller phone">
+    <header class="dial__head">
+      <div class="brand"><span class="mark" id="brandIco"></span><span>Rakshak live-call test line</span></div>
+      <p class="small muted" style="margin:6px 0 0">This is the <b>other party's phone</b>. It dials the SafePay customer's session so Rakshak can be tested on a real two-device call.</p>
+      <div class="cluster dial__pills" role="status" aria-live="polite">
+        <span class="pill pill--outline" id="connPill">not connected</span>
+        <span class="pill" id="sessPill">session: –</span>
+      </div>
+    </header>
 
-  <div>
-    <div class="dialpad">
-      <button class="round" id="btnMute" aria-pressed="false" aria-label="Mute">🎙️</button>
-      <button class="round green" id="btnCall" aria-label="Call">📞</button>
-      <button class="round red" id="btnHang" aria-label="Hang up" disabled>⛔</button>
-    </div>
-    <details class="prompter">
-      <summary class="small muted">Script prompter (read these lines)</summary>
-      <select id="scriptSel" style="margin:8px 0"></select>
-      <div id="lines"></div>
-      <div class="small muted" style="margin-top:6px">Lines marked <b>payment_demand</b> are where the customer opens Pay. “Say” plays the line in a synthetic voice if you prefer not to speak.</div>
-    </details>
-  </div>
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-</main>
+    <section class="dial__contact" aria-label="Customer being called">
+      <div class="dial__ring" aria-hidden="true">
+        <svg viewBox="0 0 120 120" class="dial__ringSvg"><circle class="dial__ringTrack" cx="60" cy="60" r="56"/><circle class="dial__ringLvl" id="vu" cx="60" cy="60" r="56" stroke-dasharray="351.9" stroke-dashoffset="351.9" transform="rotate(-90 60 60)"/></svg>
+        <div class="dial__avatar" id="avatar">?</div>
+      </div>
+      <div class="dial__name" id="target">SafePay customer</div>
+      <div class="dial__sub" id="targetSub">Enter a session code to see who you are calling</div>
+      <div class="dial__status num" id="status" aria-live="polite">Ready</div>
+      <div class="dial__hint" id="state">Enter the session code from the customer's phone, then tap Call.</div>
+      <div class="dial__presence"><span class="pill pill--outline" id="custPill">Customer's phone: ?</span></div>
+    </section>
+
+    <section class="dial__setup" id="setup">
+      <div class="field" id="sessField">
+        <label for="sessInp">Session code</label>
+        <input id="sessInp" placeholder="e.g. 4f3a9c1b" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="text">
+      </div>
+      <div class="field" id="nameField">
+        <label for="dispInp">Show my number as</label>
+        <input id="dispInp" value="+91 98765 00301" autocomplete="off">
+      </div>
+      <div class="field__hint">The session code is shown under “Developer options” on the customer's phone.</div>
+    </section>
+
+    <section class="dial__pad" aria-label="Call controls">
+      <div class="dial__keys">
+        <div class="dial__key"><button class="round" id="btnMute" type="button" aria-pressed="false" aria-label="Mute"></button><span class="dial__keyLbl" id="muteLbl">Mute</span></div>
+        <div class="dial__key"><button class="round round--call" id="btnCall" type="button" aria-label="Call"></button><span class="dial__keyLbl">Call</span></div>
+        <div class="dial__key"><button class="round round--end" id="btnHang" type="button" aria-label="End call" disabled></button><span class="dial__keyLbl">End</span></div>
+      </div>
+      <details class="collapse prompter" id="prompter">
+        <summary><span id="prompterIco"></span>Script prompter <span class="pill pill--outline" id="progressPill" style="margin-left:auto">0 / 0</span></summary>
+        <div class="collapse__body">
+          <div class="field" style="margin:8px 0"><label for="scriptSel">Script</label><select id="scriptSel"></select></div>
+          <div class="steps prompter__steps" id="lines" role="list"></div>
+          <div class="small muted" style="margin-top:8px">Read the highlighted line aloud, or tap <b>Say</b> to play it in a synthetic voice. Lines marked <b>payment demand</b> are where the customer opens Pay. The customer's own lines are dimmed.</div>
+        </div>
+      </details>
+    </section>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </main>
+</div>
 <script src="/static/common.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
-const C = { sid: null, callWS: null, evWS: null, mic: null, player: new Player(), muted: false, t0: null, timer: null, script: null, state: 'idle' };
+const C = { sid: null, callWS: null, evWS: null, mic: null, player: new Player(), muted: false, t0: null, timer: null, ringTimer: null, script: null, said: new Set(), state: 'idle', profile: null, loadSeq: 0 };
+const LANG_NAMES = { hi: 'Hindi', hinglish: 'Hinglish', en: 'English', 'en-sg': 'English (Singapore)', kn: 'Kannada', ta: 'Tamil' };
+const CALLING = { hi: 'कॉल कर रहे हैं', hinglish: 'Call kar rahe hain', en: 'Calling', 'en-sg': 'Calling', kn: 'ಕರೆ ಮಾಡಲಾಗುತ್ತಿದೆ', ta: 'அழைக்கிறது' };
+const RING_C = 351.9;
+$('brandIco').innerHTML = icon('phone'); $('prompterIco').innerHTML = icon('list');
 function toast(m, ms = 2600) { const t = $('toast'); t.textContent = m; t.classList.add('is-open'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('is-open'), ms); }
 function setState(txt) { $('state').textContent = txt; }
-function presence(online) { $('custPill').textContent = online ? "customer's phone: open" : "customer's phone: NOT open on this code"; $('custPill').className = 'pill ' + (online ? 'pill--ok' : 'pill--hold'); if (!online && C.state === 'ringing') setState('Ringing… but the customer\'s phone is not open on session ' + C.sid + '. Ask them to open /?session=' + C.sid); }
+function setStatus(txt, cls) { const s = $('status'); s.textContent = txt; s.className = 'dial__status num' + (cls ? ' is-' + cls : ''); }
 function setConn(txt, cls) { $('connPill').textContent = txt; $('connPill').className = 'pill ' + (cls || 'pill--outline'); }
+function presence(online) {
+  $('custPill').textContent = online ? "Customer's phone: open" : "Customer's phone: not open on this code";
+  $('custPill').className = 'pill ' + (online ? 'pill--ok' : 'pill--hold');
+  if (!online && C.state === 'ringing') setState('Ringing… but the customer\'s phone is not open on session ' + C.sid + '. Ask them to open /?session=' + C.sid);
+}
+function setLevel(r) { $('vu').style.strokeDashoffset = String(RING_C * (1 - Math.min(1, r * 4))); }
+function initials(name) { return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || '?'; }
+function setButtons() {
+  $('btnMute').innerHTML = icon(C.muted ? 'micOff' : 'mic'); $('btnMute').setAttribute('aria-pressed', C.muted ? 'true' : 'false'); $('muteLbl').textContent = C.muted ? 'Unmute' : 'Mute';
+  $('btnCall').innerHTML = icon('phone'); $('btnHang').innerHTML = icon('phoneOff');
+  const inCall = C.state !== 'idle';
+  $('btnCall').disabled = inCall; $('btnHang').disabled = !inCall; $('setup').hidden = inCall;
+}
 
+// ---------- customer identity (follows the selected customer, never hard-coded) ----------
+function renderCustomer(p) {
+  C.profile = p || null;
+  if (!p) { $('avatar').textContent = '?'; $('target').textContent = 'SafePay customer'; $('targetSub').textContent = 'Enter a session code to see who you are calling'; return; }
+  $('avatar').textContent = initials(p.name);
+  $('target').textContent = p.name || 'SafePay customer';
+  $('targetSub').textContent = ['SafePay customer', LANG_NAMES[p.language] || p.language, p.age_band].filter(Boolean).join(' · ');
+  if (C.state === 'ringing') setStatus((CALLING[p.language] || CALLING.en) + ' ' + p.name + '…', 'ringing');
+}
+async function loadCustomer(sid) {
+  sid = (sid || '').trim(); if (!sid) { renderCustomer(null); return; }
+  const seq = ++C.loadSeq;
+  let snap = null;
+  try { snap = await api('/api/sessions/' + encodeURIComponent(sid)); }
+  catch (e) { if (e.network) { toast('Cannot reach the Rakshak server'); return; } try { snap = await api('/api/sessions', 'POST', { session_id: sid }); } catch (e2) { toast('Could not look up session ' + sid); return; } }
+  if (seq !== C.loadSeq) return;
+  C.sid = sid; $('sessPill').textContent = 'session: ' + sid;
+  renderCustomer(snap.profile);
+  presence(!!snap.customer_online);
+  if (!C.evWS || C.evWS._sid !== sid) connectEvents();
+}
+let _sessT = null;
+$('sessInp').addEventListener('input', () => { clearTimeout(_sessT); _sessT = setTimeout(() => loadCustomer($('sessInp').value), 500); });
+$('sessInp').addEventListener('change', () => { clearTimeout(_sessT); loadCustomer($('sessInp').value); });
+
+// ---------- script prompter ----------
 async function loadScripts() {
   try {
     const list = await api('/api/scripts');
@@ -74,52 +126,87 @@ async function loadScripts() {
   } catch (e) { $('lines').innerHTML = '<div class="small muted">Scripts unavailable.</div>'; }
 }
 async function loadScript() {
-  C.script = await api('/api/scripts/' + $('scriptSel').value);
-  $('lines').innerHTML = C.script.lines.map(l => `<div class="line ${l.speaker}"><span class="n">${l.n}</span><div><div>${esc(l.text)}</div>${l.text_en && l.text_en !== l.text ? `<div class="small muted">${esc(l.text_en)}</div>` : ''}${l.marker ? `<span class="pill pill--hold" style="margin-top:4px">${l.marker}</span>` : ''}</div>${l.speaker === 'caller' ? `<button class="btn btn--sm btn--secondary" data-n="${l.n}">Say</button>` : ''}</div>`).join('');
-  $('lines').querySelectorAll('button').forEach(b => b.onclick = async () => { if (!C.sid) return toast('Join a session first'); const l = C.script.lines.find(x => x.n === Number(b.dataset.n)); await api(`/api/sessions/${C.sid}/say`, 'POST', { text: l.text, speaker: 'caller', voice: true }); });
+  C.script = await api('/api/scripts/' + $('scriptSel').value); C.said = new Set();
+  $('lines').innerHTML = C.script.lines.map(l => `<div class="step ${l.speaker === 'user' ? 'step--user' : ''}" role="listitem" data-n="${l.n}"><span class="step__n">${l.n}</span><div class="step__text"><div>${esc(l.text)}</div>${l.text_en && l.text_en !== l.text ? `<div class="step__en">${esc(l.text_en)}</div>` : ''}${l.speaker === 'user' ? '<div class="step__en">customer</div>' : ''}</div><div class="step__trail">${l.marker ? `<span class="chip ${l.marker === 'payment_demand' ? '' : 'chip--warn'}">${esc(l.marker.replace(/_/g, ' '))}</span>` : ''}${l.speaker === 'caller' ? `<button class="btn btn--sm btn--secondary" data-n="${l.n}" type="button" aria-label="Say line ${l.n}">Say</button>` : ''}</div></div>`).join('');
+  $('lines').querySelectorAll('button').forEach(b => b.onclick = async () => {
+    if (!C.sid) return toast('Enter the session code first');
+    const l = C.script.lines.find(x => x.n === Number(b.dataset.n));
+    try { await api(`/api/sessions/${C.sid}/say`, 'POST', { text: l.text, speaker: 'caller', voice: true }); markSaid(l.n); } catch (e) { toast('Could not send the line: ' + e.message); }
+  });
+  updateProgress();
+}
+function updateProgress() { if (!C.script) return; $('progressPill').textContent = `${C.said.size} / ${C.script.lines.length}`; }
+function markSaid(n) {
+  if (!C.script) return; C.said.add(n);
+  $('lines').querySelectorAll('.step').forEach(el => { const k = Number(el.dataset.n); el.classList.toggle('is-said', C.said.has(k) && k !== n); el.classList.toggle('is-current', k === n); });
+  const cur = $('lines').querySelector(`.step[data-n="${n}"]`); if (cur && $('prompter').open) cur.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  updateProgress();
+}
+const norm = (s) => (s || '').toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter(w => w.length > 1);
+function matchLine(turn) {
+  if (!C.script) return null; const txt = (turn.text || '').trim();
+  const exact = C.script.lines.find(x => x.speaker === turn.speaker && x.text.trim() === txt && !C.said.has(x.n)) || C.script.lines.find(x => x.speaker === turn.speaker && x.text.trim() === txt);
+  if (exact) return exact.n;
+  const a = new Set(norm(txt)); if (a.size < 3) return null;
+  let best = null, bestScore = 0;
+  for (const l of C.script.lines) {
+    if (l.speaker !== turn.speaker || C.said.has(l.n)) continue;
+    const words = [...new Set([...norm(l.text), ...norm(l.text_en)])]; if (!words.length) continue;
+    const hit = words.filter(w => a.has(w)).length, score = hit / Math.min(words.length, a.size);
+    if (score > bestScore) { bestScore = score; best = l.n; }
+  }
+  return bestScore >= 0.5 ? best : null;
 }
 
+// ---------- events ----------
 function connectEvents() {
-  if (C.evWS) C.evWS.close();
-  C.evWS = openWS(`/ws/events/${C.sid}?role=caller`, { onJson: (e) => {
-    if (e.type === 'hello' && e.snapshot) presence(!!e.snapshot.customer_online);
+  if (C.evWS) { try { C.evWS.close(); } catch (e) {} }
+  const sid = C.sid; let ws = null;
+  ws = C.evWS = openWS(`/ws/events/${sid}?role=caller`, { onJson: (e) => {
+    if (e.type === 'hello' && e.snapshot) { presence(!!e.snapshot.customer_online); if (e.snapshot.profile) renderCustomer(e.snapshot.profile); }
     if (e.type === 'presence' && e.role === 'user') presence(e.online);
-    if (e.type === 'call_accepted') { clearInterval(C.ringTimer); C.state = 'connected'; C.t0 = Date.now(); clearInterval(C.timer); C.timer = setInterval(() => setState('Connected · ' + fmtClock((Date.now() - C.t0) / 1000)), 1000); setState('Connected'); toast('Customer answered'); }
-    if (e.type === 'call_declined') { setState('Declined'); hangup(false); }
-    if (e.type === 'call_ended') { if (C.state !== 'idle') { setState('Call ended'); hangup(false); } }
+    if (e.type === 'transcript' && e.turn) { const n = matchLine(e.turn); if (n != null) markSaid(n); }
+    if (e.type === 'call_accepted') { clearInterval(C.ringTimer); C.state = 'connected'; C.t0 = Date.now(); clearInterval(C.timer); const tick = () => setStatus('Connected ' + fmtClock((Date.now() - C.t0) / 1000), 'live'); tick(); C.timer = setInterval(tick, 1000); setState('The customer answered. Speak normally; Rakshak is listening on their phone.'); toast('Customer answered'); setButtons(); }
+    if (e.type === 'call_declined') { setStatus('Declined', 'ended'); hangup(false); setState('The customer declined the call.'); }
+    if (e.type === 'call_ended') { if (C.state !== 'idle') { hangup(false); setStatus('Ended', 'ended'); setState('The call ended.'); } }
     if (e.type === 'party_joined' && e.role === 'user') { if (C.state === 'ringing') toast('Customer is on the line'); }
     if (e.type === 'decision') toast('Rakshak intervened on the customer\'s phone: ' + e.case.decision.action.replace(/_/g, ' '), 4000);
     if (e.type === 'whisper') toast('Rakshak whispered to the customer (you cannot hear it)', 3000);
-  }});
+  }, onClose: () => { if (C.evWS === ws && C.sid === sid) { setConn('not connected'); setTimeout(() => { if (C.evWS === ws && C.sid === sid) connectEvents(); }, 2000); } } });
+  C.evWS._sid = sid;
 }
 
+// ---------- call ----------
 async function call() {
-  C.sid = ($('sessInp').value || '').trim(); if (!C.sid) return toast('Enter the session code');
-  C.player.ensure();
-  $('sessPill').textContent = 'session: ' + C.sid; $('sessField').hidden = true; $('nameField').hidden = true;
-  connectEvents();
+  const sid = ($('sessInp').value || '').trim(); if (!sid) { toast('Enter the session code'); $('sessInp').focus(); return; }
+  if (C.sid !== sid || !C.profile) await loadCustomer(sid);
+  C.sid = sid; C.player.ensure();
+  $('sessPill').textContent = 'session: ' + C.sid;
+  if (!C.evWS || C.evWS._sid !== C.sid) connectEvents();
+  C.state = 'ringing'; setButtons();
+  setStatus(C.profile ? ((CALLING[C.profile.language] || CALLING.en) + ' ' + C.profile.name + '…') : 'Ringing…', 'ringing');
   C.callWS = openWS(`/ws/call/${C.sid}/caller`, {
     onBinary: (buf) => C.player.play(new Int16Array(buf), 16000),
-    onOpen: () => { setConn('connected', 'pill--live'); const ring = () => { if (C.state === 'ringing' && C.callWS && C.callWS.readyState === 1) C.callWS.send(JSON.stringify({ type: 'ring', caller_display: $('dispInp').value || 'Unknown' })); }; C.state = 'ringing'; ring(); clearInterval(C.ringTimer); C.ringTimer = setInterval(ring, 4000); setState('Ringing the customer…'); },
-    onClose: () => { setConn('disconnected'); },
+    onOpen: () => { setConn('connected', 'pill--live'); const ring = () => { if (C.state === 'ringing' && C.callWS && C.callWS.readyState === 1) C.callWS.send(JSON.stringify({ type: 'ring', caller_display: $('dispInp').value || 'Unknown' })); }; ring(); clearInterval(C.ringTimer); C.ringTimer = setInterval(ring, 4000); setState('Ringing the customer\'s phone…'); },
+    onClose: () => { setConn('disconnected'); if (C.state !== 'idle') { hangup(false); setStatus('Ended', 'ended'); } },
   });
   try {
-    C.mic = new Mic((i16) => { if (!C.muted && C.callWS && C.callWS.readyState === 1) C.callWS.send(i16.buffer); const r = rms16 ? rms16(i16) : 0; $('vu').style.width = Math.min(100, r * 400) + '%'; });
+    C.mic = new Mic((i16) => { if (!C.muted && C.callWS && C.callWS.readyState === 1) C.callWS.send(i16.buffer); setLevel(C.muted ? 0 : rms16(i16)); });
     await C.mic.start();
-  } catch (e) { toast('Mic unavailable (' + (e.kind || e.message) + '). Use the script prompter “Say” buttons instead.', 5000); }
-  $('btnCall').disabled = true; $('btnHang').disabled = false;
+  } catch (e) { toast('Mic unavailable (' + (e.kind || e.message) + '). Use the script prompter “Say” buttons instead.', 5000); $('prompter').open = true; }
 }
 function hangup(send = true) {
   if (send && C.callWS && C.callWS.readyState === 1) { try { C.callWS.send(JSON.stringify({ type: 'end_call' })); } catch (e) {} }
-  if (C.callWS) { try { C.callWS.close(); } catch (e) {} C.callWS = null; }
-  if (C.mic) { C.mic.stop(); C.mic = null; } clearInterval(C.timer); clearInterval(C.ringTimer); C.state = 'idle';
-  $('btnCall').disabled = false; $('btnHang').disabled = true; $('sessField').hidden = false; $('nameField').hidden = false; setConn('not connected');
-  if (send) setState('Call ended');
+  if (C.callWS) { const ws = C.callWS; C.callWS = null; try { ws.close(); } catch (e) {} }
+  if (C.mic) { C.mic.stop(); C.mic = null; } clearInterval(C.timer); clearInterval(C.ringTimer); C.state = 'idle'; setLevel(0);
+  setConn('not connected'); setButtons();
+  if (send) { setStatus('Ended', 'ended'); setState('Call ended. Tap Call to ring again.'); }
 }
 $('btnCall').onclick = call;
 $('btnHang').onclick = () => hangup(true);
-$('btnMute').onclick = () => { C.muted = !C.muted; $('btnMute').setAttribute('aria-pressed', C.muted ? 'true' : 'false'); if (C.callWS && C.callWS.readyState === 1) C.callWS.send(JSON.stringify({ type: 'mute', muted: C.muted })); toast(C.muted ? 'Muted' : 'Unmuted', 1200); };
-if (qs('session')) { $('sessInp').value = qs('session'); }
+$('btnMute').onclick = () => { C.muted = !C.muted; setButtons(); if (C.callWS && C.callWS.readyState === 1) C.callWS.send(JSON.stringify({ type: 'mute', muted: C.muted })); toast(C.muted ? 'Muted' : 'Unmuted', 1200); };
+setButtons();
+if (qs('session')) { $('sessInp').value = qs('session'); loadCustomer(qs('session')); }
 loadScripts();
 </script>
 </body>

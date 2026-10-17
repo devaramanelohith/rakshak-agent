@@ -31,6 +31,12 @@
       </div>
       <div class="case-list" id="cases" role="listbox" aria-label="Cases"></div>
     </section>
+
+    <section class="card card--flat card--tint no-print" aria-labelledby="sysTitle" style="margin-top:auto">
+      <div class="between"><div class="card__title" id="sysTitle" style="margin:0"><span id="sysIco"></span>System</div><span class="pill pill--outline" id="sysPill">checking</span></div>
+      <dl class="kv" id="sysModels" style="margin-top:8px"></dl>
+      <div class="small muted" id="sysLedger" style="margin-top:8px"></div>
+    </section>
   </aside>
 
   <main class="desk__detail" id="detail" aria-live="polite"></main>
@@ -39,7 +45,20 @@
 <script src="/static/common.js"></script>
 <script>
 const $ = (id) => document.getElementById(id); let CASES = [], SEL = null, FILTER = 'all'; const LIVE = {};
-[['brandIco', 'shield'], ['liveIco', 'wave']].forEach(([id, n]) => { $(id).innerHTML = icon(n); });
+[['brandIco', 'shield'], ['liveIco', 'wave'], ['sysIco', 'database']].forEach(([id, n]) => { $(id).innerHTML = icon(n); });
+// System footer: live models from /api/health and the moving ledger from /api/ledger/stats.
+async function refreshSystem() {
+  try {
+    const [h, l] = await Promise.all([api('/api/health'), api('/api/ledger/stats').catch(() => null)]);
+    const m = h.models || {};
+    $('sysModels').innerHTML = [['rubric', m.rubric], ['transcribe', m.transcribe], ['agent', m.agent], ['voice', m.tts], ['live', m.live]].filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd class="mono" style="font-weight:600">${esc(v)}</dd>`).join('') || '<dt>models</dt><dd>not configured</dd>';
+    $('sysPill').className = 'pill ' + (h.llm ? 'pill--ok' : 'pill--warn'); $('sysPill').textContent = (h.llm ? (h.vertex ? 'Vertex AI' : 'Gemini API') : 'offline rules') + (h.live ? ' · live' : '');
+    if (l && l.enabled !== false && l.tx_in_window != null) {
+      $('sysLedger').innerHTML = `${icon('bolt')} Ledger: <b>${Number(l.tx_in_window).toLocaleString('en-IN')}</b> transactions in window · ${l.tx_last_minute ?? 0} in the last minute · ${l.payees ?? '–'} payees · refreshed ${l.last_tick ? relTime(l.last_tick) : 'just now'}${l.sinks && l.sinks.length ? ' · sinks: ' + esc(l.sinks.join(', ')) : ''}`;
+      $('sysLedger').style.display = 'flex'; $('sysLedger').style.gap = '6px'; $('sysLedger').style.alignItems = 'center'; $('sysLedger').style.flexWrap = 'wrap';
+    } else { $('sysLedger').textContent = 'Ledger simulator off: payee features come from the static risk table.'; }
+  } catch (e) { $('sysPill').className = 'pill pill--hold'; $('sysPill').textContent = 'unreachable'; }
+}
 $('detail').innerHTML = `<div class="empty">${icon('list')}<div class="empty__title">Select a case</div><div class="small">Cases appear here the moment Rakshak intervenes on a payment.</div></div>`;
 const STATUS = { on_hold: ['pill--hold', 'hand', 'On hold'], overridden_by_user: ['pill--warn', 'warn', 'Overridden'], cancelled_by_user: ['pill--ok', 'shield', 'Cancelled'], approved: ['pill--ok', 'check', 'Approved'], warned: ['pill--warn', 'warn', 'Warned'], hold_expired: ['', 'clock', 'Hold expired'] };
 const SIGNAL_LABELS = { authority_impersonation: 'authority', secrecy: 'secrecy', urgency: 'urgency', remote_app_install: 'remote app', safe_account: 'safe account', investment_pressure: 'investment', otp_or_credential_request: 'OTP / PIN', threat_of_arrest_or_harm: 'threat' };
@@ -172,7 +191,7 @@ function connectLive() {
     if (e.type === 'decision' || e.type === 'case_update') { SEL = SEL || e.case.case_id; refresh(); if (e.type === 'decision') toast(`New case: ${e.case.decision.action.replace(/_/g, ' ')} on ${fmtINR(e.case.payment.amount_inr)}`); }
   }, onClose: () => { setConn('bad', 'reconnecting'); setTimeout(connectLive, 2000); } });
 }
-connectLive(); refresh(); setInterval(refresh, 8000);
+connectLive(); refresh(); refreshSystem(); setInterval(refresh, 8000); setInterval(refreshSystem, 8000);
 </script>
 </body>
 </html>

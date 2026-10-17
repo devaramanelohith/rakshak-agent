@@ -11,7 +11,8 @@
 <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-<div class="op">
+<div class="banner banner--info" style="margin:var(--sp-4) var(--sp-4) 0;border-radius:var(--r-md)"><span id="opNoteIco"></span><div class="banner__body"><b>Operator console</b> (for recording and scripted runs). For a live two-phone call use <a href="/call">/call</a>.</div></div>
+<div class="op" style="min-height:0">
   <aside class="op__col" aria-label="Session and microphone">
     <div class="op__header"><div class="brand"><span class="mark" id="brandIco"></span>Caller console</div><span class="pill pill--outline">operator</span></div>
     <p class="small muted" style="margin:0">You play the scammer (or a legitimate caller). Join the victim's session, then speak into your mic or click lines from a script. The victim's phone hears your voice and Rakshak transcribes it.</p>
@@ -78,7 +79,7 @@
 const $ = (id) => document.getElementById(id);
 const C = { sid: null, ws: null, ev: null, mic: null, player: new Player(), script: null, said: new Set(), current: null };
 const SIGNAL_LABELS = { authority_impersonation: 'authority', secrecy: 'secrecy', urgency: 'urgency', remote_app_install: 'remote app', safe_account: 'safe account', investment_pressure: 'investment', otp_or_credential_request: 'OTP / PIN', threat_of_arrest_or_harm: 'threat' };
-[['brandIco', 'phone'], ['joinIco', 'link'], ['micIco', 'mic'], ['btnMicIco', 'mic'], ['hangIco', 'phoneOff'], ['micWarnIco', 'warn'], ['sayIco', 'message'], ['mirrorIco', 'shield'], ['decIco', 'hand'], ['scriptIco', 'list'], ['autoIco', 'play'], ['stopIco', 'stop']].forEach(([id, n]) => { $(id).innerHTML = icon(n); });
+[['brandIco', 'phone'], ['opNoteIco', 'info'], ['joinIco', 'link'], ['micIco', 'mic'], ['btnMicIco', 'mic'], ['hangIco', 'phoneOff'], ['micWarnIco', 'warn'], ['sayIco', 'message'], ['mirrorIco', 'shield'], ['decIco', 'hand'], ['scriptIco', 'list'], ['autoIco', 'play'], ['stopIco', 'stop']].forEach(([id, n]) => { $(id).innerHTML = icon(n); });
 function toast(msg) { const el = $('toast'); el.textContent = msg; el.classList.add('is-open'); clearTimeout(el._h); el._h = setTimeout(() => el.classList.remove('is-open'), 2600); }
 function status(t) { $('status').textContent = t; }
 function setConn(state, text) { const p = $('connPill'); p.className = 'pill ' + (state === 'on' ? 'pill--live' : state === 'bad' ? 'pill--hold' : ''); p.innerHTML = `<span class="dot"></span>${esc(text)}`; }
