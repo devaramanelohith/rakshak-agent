@@ -242,6 +242,6 @@ Rakshak degrades gracefully with the customer's consent: Tier 0 uses only call s
 
 ## License and team
 
-MIT License (add the `LICENSE` file to the repository root before submission; the repo does not contain one yet).
+MIT License, see [LICENSE](LICENSE).
 
 Team: _add names, roles and contact here before submission_.

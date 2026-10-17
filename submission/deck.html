@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rakshak deck</title>
+<style>
+@page { size: 1920px 1080px; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #fff; }
+body { font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif; color: #0b1f3a; -webkit-print-color-adjust: exact; print-color-adjust: exact; width: 1920px; }
+.slide { position: relative; width: 1920px; height: 1080px; overflow: hidden; page-break-after: always; break-after: page; padding: 80px 110px 70px 110px; background: #fff; }
+.slide:last-child { page-break-after: auto; break-after: auto; }
+.slide.dark { background: #0b1f3a; color: #fff; }
+.slide.dark h1, .slide.dark h2, .slide.dark p { color: #fff; }
+h1 { font-size: 112px; line-height: 1.02; margin: 0; font-weight: 800; letter-spacing: -2px; }
+h2 { font-size: 64px; line-height: 1.1; margin: 0 0 36px 0; font-weight: 800; color: #0b1f3a; letter-spacing: -1px; }
+h3 { font-size: 34px; margin: 0 0 12px 0; font-weight: 700; color: #0b1f3a; }
+p { font-size: 34px; line-height: 1.35; margin: 0 0 18px 0; }
+.lead { font-size: 40px; line-height: 1.3; color: #1f2937; margin-bottom: 40px; }
+.eyebrow { font-size: 26px; letter-spacing: 0.18em; text-transform: uppercase; color: #1a73e8; font-weight: 700; margin-bottom: 20px; }
+.footer { position: absolute; left: 110px; right: 110px; bottom: 44px; font-size: 22px; color: #6b7280; display: flex; justify-content: space-between; align-items: flex-end; }
+.dark .footer { color: #a8b5c8; }
+.num { position: absolute; right: 110px; bottom: 44px; font-size: 22px; color: #6b7280; }
+.tiles { display: flex; gap: 40px; margin-top: 10px; }
+.tile { flex: 1; border-radius: 24px; padding: 44px 40px; background: #f3f6fb; border-top: 14px solid #1a73e8; }
+.tile.red { border-top-color: #e5484d; }
+.tile.green { border-top-color: #30a46c; }
+.tile .big { font-size: 96px; font-weight: 800; letter-spacing: -2px; line-height: 1; color: #0b1f3a; margin-bottom: 18px; }
+.tile .big.red { color: #e5484d; }
+.tile .cap { font-size: 30px; line-height: 1.3; color: #1f2937; }
+.tile .src { font-size: 22px; color: #6b7280; margin-top: 18px; }
+table { border-collapse: collapse; width: 100%; font-size: 29px; line-height: 1.3; }
+th, td { border: 2px solid #d9dee7; padding: 18px 22px; text-align: left; vertical-align: top; }
+th { background: #0b1f3a; color: #fff; font-weight: 700; }
+.tight th, .tight td { padding: 13px 20px; }
+tr.hl td { background: #e8f0fe; font-weight: 700; }
+td.red { color: #e5484d; font-weight: 700; }
+td.green { color: #30a46c; font-weight: 700; }
+.moments { display: flex; gap: 34px; margin-top: 30px; }
+.moment { flex: 1; border-radius: 24px; padding: 36px 34px; background: #f3f6fb; min-height: 430px; }
+.moment .k { font-size: 26px; font-weight: 700; color: #1a73e8; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; }
+.moment h3 { font-size: 40px; }
+.moment p { font-size: 29px; color: #1f2937; }
+.moment.hero { background: #0b1f3a; color: #fff; }
+.moment.hero h3, .moment.hero p { color: #fff; }
+.moment.hero .k { color: #8ab4f8; }
+.cols { display: flex; gap: 60px; }
+.col { flex: 1; }
+ul { margin: 0; padding-left: 44px; font-size: 32px; line-height: 1.4; }
+li { margin-bottom: 14px; }
+.shot { width: 760px; height: 760px; border-radius: 32px; border: 6px dashed #1a73e8; background: #f3f6fb; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+.shot .t { font-size: 30px; color: #1a73e8; font-weight: 700; margin-bottom: 14px; }
+.shot .c { font-size: 26px; color: #4b5563; line-height: 1.35; }
+.pill { display: inline-block; padding: 8px 22px; border-radius: 999px; font-size: 26px; font-weight: 700; margin-right: 12px; }
+.pill.red { background: #e5484d; color: #fff; }
+.pill.green { background: #30a46c; color: #fff; }
+.pill.blue { background: #1a73e8; color: #fff; }
+.pill.navy { background: #0b1f3a; color: #fff; }
+/* architecture */
+.arch { position: relative; width: 1700px; height: 790px; margin-top: 6px; font-size: 19px; }
+.box { position: absolute; border-radius: 16px; padding: 12px 16px; background: #fff; border: 3px solid #0b1f3a; line-height: 1.2; width: 255px; height: 125px; overflow: hidden; }
+.box b { display: block; font-size: 21px; margin-bottom: 3px; }
+.box.phone { background: #e8f0fe; border-color: #1a73e8; }
+.box.model { background: #fff7f7; border-color: #e5484d; }
+.box.act { background: #eaf8f0; border-color: #30a46c; }
+.box.agent { background: #f3f6fb; border-color: #0b1f3a; }
+.box.data { background: #f9fafb; border-color: #6b7280; border-style: dashed; }
+.region { position: absolute; border: 3px dashed #1a73e8; border-radius: 22px; }
+.region .lbl { position: absolute; top: -20px; left: 24px; background: #fff; padding: 0 12px; color: #1a73e8; font-weight: 700; font-size: 24px; }
+.arrow { position: absolute; background: #0b1f3a; }
+.arrow.h { height: 4px; }
+.arrow.v { width: 4px; }
+.arrow.h::after { content: ""; position: absolute; right: -2px; top: -8px; border-left: 16px solid #0b1f3a; border-top: 10px solid transparent; border-bottom: 10px solid transparent; }
+.arrow.v::after { content: ""; position: absolute; bottom: -2px; left: -8px; border-top: 16px solid #0b1f3a; border-left: 10px solid transparent; border-right: 10px solid transparent; }
+.arrow.up::after { bottom: auto; top: -2px; border-top: none; border-bottom: 16px solid #0b1f3a; }
+.alabel { position: absolute; font-size: 20px; color: #4b5563; background: #fff; padding: 0 6px; }
+.legend { position: absolute; left: 0; bottom: 0; display: flex; gap: 26px; font-size: 22px; color: #4b5563; }
+.legend span:not(:last-child)::before { content: ""; display: inline-block; width: 22px; height: 22px; border-radius: 5px; margin-right: 8px; vertical-align: -3px; border: 2px solid; }
+.legend .l1::before { background: #e8f0fe; border-color: #1a73e8; }
+.legend .l2::before { background: #fff7f7; border-color: #e5484d; }
+.legend .l3::before { background: #eaf8f0; border-color: #30a46c; }
+.legend .l4::before { background: #f3f6fb; border-color: #0b1f3a; }
+.legend .l5::before { background: #f9fafb; border-color: #6b7280; border-style: dashed; }
+/* confusion matrix */
+.cm { border-collapse: collapse; font-size: 30px; }
+.cm th, .cm td { border: 2px solid #d9dee7; padding: 18px 30px; text-align: center; }
+.cm th { background: #f3f6fb; color: #0b1f3a; }
+.cm td.good { background: #eaf8f0; color: #30a46c; font-weight: 800; font-size: 44px; }
+.cm td.bad { background: #fff7f7; color: #e5484d; font-weight: 800; font-size: 44px; }
+.metrics { display: flex; gap: 24px; margin-top: 30px; }
+.metric { flex: 1; background: #f3f6fb; border-radius: 18px; padding: 22px 20px; text-align: center; }
+.metric .v { font-size: 54px; font-weight: 800; color: #0b1f3a; line-height: 1; }
+.metric .l { font-size: 22px; color: #4b5563; margin-top: 10px; line-height: 1.25; }
+.tiers { width: 100%; }
+.tiers td:first-child { font-weight: 700; white-space: nowrap; }
+.tiers th, .tiers td { padding: 14px 18px; }
+.callout { background: #f3f6fb; border-left: 14px solid #1a73e8; border-radius: 0 20px 20px 0; padding: 26px 34px; font-size: 30px; line-height: 1.35; color: #1f2937; }
+.callout.red { border-left-color: #e5484d; }
+.callout.green { border-left-color: #30a46c; }
+.dark .callout { background: #15305a; color: #fff; }
+.title-url { font-size: 34px; color: #8ab4f8; margin-top: 10px; }
+.kbd { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.92em; background: #eef2f7; padding: 2px 10px; border-radius: 8px; color: #0b1f3a; }
+.dark .kbd { background: #15305a; color: #fff; }
+.steps { counter-reset: s; list-style: none; padding: 0; }
+.steps li { counter-increment: s; position: relative; padding-left: 90px; margin-bottom: 26px; font-size: 34px; line-height: 1.3; }
+.steps li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 64px; height: 64px; border-radius: 50%; background: #1a73e8; color: #fff; font-weight: 800; font-size: 34px; display: flex; align-items: center; justify-content: center; }
+</style>
+</head>
+<body>
+
+<!-- 1 TITLE -->
+<section class="slide dark">
+  <div class="eyebrow" style="color:#8ab4f8">Google Cloud AI Builder Cup 2026 &middot; Theme: BFSI</div>
+  <h1>Rakshak</h1>
+  <p style="font-size:62px; font-weight:700; line-height:1.15; margin:34px 0 46px 0; max-width:1500px;">Stop the scam at the moment of payment.</p>
+  <p style="font-size:36px; max-width:1500px; color:#d6e0f0;">A guardian agent inside the bank app. It hears the coercion on the call, checks who is being paid, and pauses the transfer with a voice in the customer's own language.</p>
+  <div style="position:absolute; left:110px; bottom:150px;">
+    <p style="font-size:34px; margin-bottom:8px;"><b>Team Rakshak</b> &nbsp;&middot;&nbsp; <span style="color:#a8b5c8">[add member names, roles, contact]</span></p>
+    <p class="title-url">https://rakshak-223197895518.asia-southeast1.run.app &nbsp;&middot;&nbsp; github.com/devaramanelohith/rakshak-agent</p>
+  </div>
+  <div class="footer"><span>Gemini 3.5 and 3.8 &middot; Google ADK 2.11 &middot; Cloud Run asia-southeast1</span><span>1 / 14</span></div>
+</section>
+
+<!-- 2 PROBLEM -->
+<section class="slide">
+  <div class="eyebrow">The problem</div>
+  <h2>The money leaves while the scammer is still talking</h2>
+  <div class="tiles">
+    <div class="tile red">
+      <div class="big red">81.8%</div>
+      <div class="cap">of Singapore's 2025 scam cases were self-effected transfers: the victim paid.</div>
+      <div class="src">Singapore Police Force, Feb 2026</div>
+    </div>
+    <div class="tile red">
+      <div class="big red">&#8377;22,495 cr</div>
+      <div class="cap">lost to cyber fraud in India in 2025. About 24% was recovered.</div>
+      <div class="src">Moneylife / MHA data</div>
+    </div>
+    <div class="tile">
+      <div class="big">123,672</div>
+      <div class="cap">digital-arrest cases in 2024, &#8377;1,935.51 crore lost.</div>
+      <div class="src">Parliamentary data</div>
+    </div>
+  </div>
+  <div class="callout" style="margin-top:56px;">Under MAS's Shared Responsibility Framework the liability for missed real-time controls sits with the bank. Nothing today combines what is said on the call with who is being paid.</div>
+  <div class="footer"><span>police.gov.sg &middot; moneylife.in &middot; MHA parliamentary replies</span><span>2 / 14</span></div>
+</section>
+
+<!-- 3 WHY TODAY'S DEFENCES MISS IT -->
+<section class="slide">
+  <div class="eyebrow">Why today's defences miss it</div>
+  <h2>Everyone sees one piece. Nobody joins them when the money moves.</h2>
+  <table>
+    <tr><th style="width:24%">Defence</th><th style="width:22%">Sees</th><th style="width:18%">Acts</th><th>Misses</th></tr>
+    <tr><td>Pixel scam detection (on device)</td><td>Speech patterns</td><td>Warn only</td><td>No payee knowledge, no hold, nothing reaches the bank</td></tr>
+    <tr><td>Call-state signals (FICO Scam Signal, BioCatch)</td><td>A call is in progress</td><td>Risk score at payment</td><td>Cannot tell a daughter asking for fees from a fake CBI inspector</td></tr>
+    <tr><td>Bank fraud engines</td><td>Payer, payee, amount</td><td>Block or step-up</td><td>The coerced victim passes every step-up: they want to pay</td></tr>
+    <tr><td>Post-debit SMS, 1930 helpline</td><td>The completed debit</td><td>Notify, file</td><td>Mule accounts empty within hours; ~24% recovery</td></tr>
+    <tr class="hl"><td>Rakshak</td><td>Call semantics x payee mule risk x profile</td><td>Graded hold at authorisation</td><td>Voice in the customer's language, trusted-contact alert, case + 1930 referral, one-tap override</td></tr>
+  </table>
+  <div class="footer"><span>Sources in docs/DEMO_STRATEGY.md and the market check</span><span>3 / 14</span></div>
+</section>
+
+<!-- 4 WHAT RAKSHAK DOES -->
+<section class="slide">
+  <div class="eyebrow">What Rakshak does</div>
+  <h2>Four moments, one guardian</h2>
+  <p class="lead">With the customer's opt-in, Rakshak scores the caller's coercion live and, when Pay is tapped, fuses it with the payee's mule risk to pause the transfer.</p>
+  <div class="moments">
+    <div class="moment"><div class="k">1 &middot; Listen</div><h3>Per-speaker transcription</h3><p>Live transcript, 8 coercion signals, risk meter and reasons in Hindi, Tamil, Kannada or English.</p></div>
+    <div class="moment"><div class="k">2 &middot; Whisper</div><h3>Private warning</h3><p>At risk 0.85 the customer hears "Rakshak: careful". The caller never does.</p></div>
+    <div class="moment hero"><div class="k">3 &middot; Hold + voice</div><h3>Pay is tapped</h3><p>Decision in under 100 ms. 30-minute hold, voice barge-in over the caller, payee evidence, typed-amount override.</p></div>
+    <div class="moment"><div class="k">4 &middot; Alert</div><h3>Trusted contact + desk</h3><p>Daughter's phone chimes. Fraud desk gets the case, agent trace and a drafted 1930 referral.</p></div>
+  </div>
+  <div class="footer"><span>Opt-in, no audio retained, hold expires on its own</span><span>4 / 14</span></div>
+</section>
+
+<!-- 5 THE PAYMENT MOMENT -->
+<section class="slide">
+  <div class="eyebrow">The payment moment</div>
+  <h2>What the customer sees one second after Pay</h2>
+  <div class="cols">
+    <div class="col" style="flex:0 0 760px;">
+      <div class="shot" style="border:0;background:transparent;display:flex;align-items:center;justify-content:center"><img src="assets/hold_screen.jpg" alt="Rakshak hold screen" style="height:100%;max-height:820px;border-radius:28px;box-shadow:0 20px 60px rgba(0,0,0,.35)"></div>
+        <div class="c">Capture from https://rakshak-223197895518.asia-southeast1.run.app/ after tapping Pay on the "Parcel from Taiwan" script: 30:00 countdown, Hindi spoken text, payee card, "Priya (daughter) has been notified", three exits.</div>
+      </div>
+    </div>
+    <div class="col">
+      <ul>
+        <li><span class="pill red">HOLD</span> "Paused for 30 minutes", spoken in Hindi over the ducked caller audio</li>
+        <li><b>Why:</b> plain words a 70-year-old understands, in their language</li>
+        <li><b>Payee card:</b> 12 payers in 48 h, 96% cashed out in 7 days, 4 complaints on 1930, lineage shown</li>
+        <li><b>Priya (daughter) has been notified</b></li>
+        <li><b>Three exits:</b> Cancel and report &middot; Talk to Rakshak (voice) &middot; I know this person, pay anyway (type the amount)</li>
+        <li>Seconds later: the ADK agent confirms with evidence on the event log</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>Measured on the public URL: hold event 20 ms to 1.2 s after Pay; voice in 100 ms when prewarmed</span><span>5 / 14</span></div>
+</section>
+
+<!-- 6 ARCHITECTURE -->
+<section class="slide">
+  <div class="eyebrow">Architecture</div>
+  <h2 style="margin-bottom:14px;">Decide fast, explain slower: two paths, one floor</h2>
+  <div class="arch">
+    <!-- devices row -->
+    <div class="box phone" style="left:30px; top:0;"><b>Customer phone &nbsp;/</b>mic 16 kHz PCM, pay screen, hold screen, override</div>
+    <div class="box phone" style="left:310px; top:0;"><b>Caller phone &nbsp;/call</b>rings the customer; audio relayed both ways</div>
+    <div class="box phone" style="left:870px; top:0;"><b>Family phone &nbsp;/family</b>trusted-contact alert with a chime</div>
+    <div class="box phone" style="left:1150px; top:0;"><b>Fraud desk &nbsp;/desk</b>case, policy vs agent, trace, 1930 referral</div>
+    <div class="box data" style="left:1440px; top:0; width:240px;"><b>Twilio fork (optional)</b>8 kHz mu-law, both legs, one-way</div>
+    <div class="arrow v" style="left:155px; top:110px; height:55px;"></div>
+    <div class="arrow v" style="left:435px; top:110px; height:55px;"></div>
+    <div class="arrow v up" style="left:995px; top:110px; height:55px;"></div>
+    <div class="arrow v up" style="left:1275px; top:110px; height:55px;"></div>
+    <div class="arrow v" style="left:1558px; top:110px; height:55px;"></div>
+    <div class="alabel" style="left:470px; top:112px;">audio over /ws/call</div>
+    <div class="alabel" style="left:1030px; top:112px;">JSON events over /ws/events</div>
+    <!-- Cloud Run region -->
+    <div class="region" style="left:0; top:165px; width:1700px; height:570px;"><div class="lbl">Cloud Run asia-southeast1 &middot; FastAPI + WebSockets &middot; Secret Manager &middot; Vertex AI (text, agents, TTS) + AI Studio key (Live)</div></div>
+    <!-- row A: call phase -->
+    <div class="box" style="left:30px; top:215px;"><b>CallSession</b>audio relay, one stream per speaker, 1.2 s debounce</div>
+    <div class="arrow h" style="left:285px; top:275px; width:25px;"></div>
+    <div class="box model" style="left:310px; top:215px;"><b>gemini-3.5-transcribe-live</b>one Live session per speaker: labelled turns</div>
+    <div class="arrow h" style="left:565px; top:275px; width:25px;"></div>
+    <div class="box model" style="left:590px; top:215px;"><b>gemini-3.5-flash rubric</b>JSON schema, 8 signals, risk 0 to 1, 2.4 to 3 s</div>
+    <div class="arrow h" style="left:845px; top:275px; width:25px;"></div>
+    <div class="box act" style="left:870px; top:215px;"><b>Risk meter + whisper</b>reasons in the user's language; private TTS at 0.85</div>
+    <div class="box data" style="left:1150px; top:215px;"><b>Customer profile</b>language, trusted contact, typical transfer, thresholds</div>
+    <div class="box data" style="left:1440px; top:215px; width:240px;"><b>Official advisories</b>I4C, RBI, SPF, MAS, SEBI, NPCI; Search grounding fallback</div>
+    <!-- rubric to fusion -->
+    <div class="arrow v" style="left:715px; top:340px; height:45px;"></div>
+    <div class="alabel" style="left:727px; top:350px;">latest rubric</div>
+    <!-- row B: payment moment -->
+    <div class="box" style="left:30px; top:385px; border-width:5px;"><b>Pay tapped</b>POST /api/payments; 60-minute carry-over after a risky call</div>
+    <div class="arrow h" style="left:285px; top:445px; width:25px;"></div>
+    <div class="box" style="left:310px; top:385px;"><b>Payee lookup</b>ledger features scored live, band, lineage record</div>
+    <div class="arrow h" style="left:565px; top:445px; width:25px;"></div>
+    <div class="box act" style="left:590px; top:385px; border-width:5px;"><b>Fusion policy &lt;100 ms</b>0.65 call + 0.35 payee + bumps; warn 0.45, hold 0.70</div>
+    <div class="arrow h" style="left:845px; top:445px; width:25px;"></div>
+    <div class="box act" style="left:870px; top:385px;"><b>Hold + voice + alert</b>gemini-3.8-flash-tts, prewarmed; in-app, Pub/Sub, SMS</div>
+    <div class="arrow h" style="left:1125px; top:445px; width:25px;"></div>
+    <div class="box model" style="left:1150px; top:385px;"><b>gemini-3.8-live voice</b>post-hold Q&amp;A with three function tools</div>
+    <div class="box data" style="left:1440px; top:385px; width:240px;"><b>Ledger stream</b>12,500+ synthetic UPI txs, ~150/min, scored live</div>
+    <!-- fusion to agent -->
+    <div class="arrow v" style="left:715px; top:510px; height:45px;"></div>
+    <div class="alabel" style="left:727px; top:520px;">in parallel</div>
+    <!-- row C: agents -->
+    <div class="box agent" style="left:30px; top:555px; width:815px; height:140px;"><b>ADK 2.11 SequentialAgent on gemini-3.8-flash (fallback gemini-3.5-flash)</b>risk_investigator: lookup_payee_risk, check_regulated_entity &rarr; decision_agent: place_payment_hold<br>final = max(agent, policy): confirms or upgrades, never relaxes. Lands 11 to 17 s after the fast path.</div>
+    <div class="arrow h" style="left:845px; top:625px; width:25px;"></div>
+    <div class="box model" style="left:870px; top:555px; height:140px;"><b>Narrative gemini-3.8-flash</b>case record, evidence points, drafted 1930 / ASCom referral</div>
+    <div class="arrow h" style="left:1125px; top:625px; width:25px;"></div>
+    <div class="box" style="left:1150px; top:555px; height:140px;"><b>Case store</b>cases, profiles, alerts, trace, timeline; Firestore or local JSON; read by /desk</div>
+    <div class="arrow h" style="left:1405px; top:625px; width:35px;"></div>
+    <div class="box data" style="left:1440px; top:555px; width:240px; height:140px;"><b>Sinks by env var</b>Pub/Sub alerts and ledger, BigQuery ledger and payee table</div>
+    <div class="legend" style="top:752px; bottom:auto;"><span class="l1">Devices</span><span class="l2">Gemini models</span><span class="l3">Actions</span><span class="l4">Agents</span><span class="l5">Data</span><span style="margin-left:30px;">Tools and the payee lookup read the advisory table, the ledger features and the profile.</span></div>
+  </div>
+  <div class="footer"><span>docs/ARCHITECTURE.md &middot; app/policy.py &middot; app/payment.py &middot; app/agents/pipeline.py</span><span>6 / 14</span></div>
+</section>
+
+<!-- 7 GOOGLE CLOUD AI USAGE -->
+<section class="slide">
+  <div class="eyebrow">Google Cloud AI usage</div>
+  <h2>Five Gemini models, ADK, Cloud Run: each with a job</h2>
+  <table style="font-size:25px;" class="tight">
+    <tr><th style="width:30%">Model or service</th><th style="width:30%">Where</th><th>Why</th></tr>
+    <tr><td>gemini-3.5-transcribe-live</td><td>Live API, one session per speaker</td><td>Labelled caller/user turns without diarization</td></tr>
+    <tr><td>gemini-3.5-flash</td><td>Coercion rubric, strict JSON schema</td><td>2.4 to 3 s with minimal thinking; clean Devanagari, Kannada, Tamil output</td></tr>
+    <tr><td>gemini-3.8-flash</td><td>ADK investigator and decision agents, narrative, Search grounding</td><td>Best tool use; latency is off the critical path</td></tr>
+    <tr><td>gemini-3.8-flash-tts</td><td>Voice barge-in and whisper, prewarmed per amount</td><td>Natural Hindi prosody; 100 ms when cached</td></tr>
+    <tr><td>gemini-3.8-live</td><td>Post-hold voice conversation with function calling</td><td>Customer asks "why?" and hears the answer</td></tr>
+    <tr><td>Google ADK 2.11</td><td>SequentialAgent, Runner, function tools</td><td>Traceable multi-agent decision with a policy floor</td></tr>
+    <tr><td>Cloud Run + Secret Manager + Vertex AI</td><td>asia-southeast1, WebSockets, session affinity</td><td>One service, no key in the image</td></tr>
+    <tr><td>Firestore, BigQuery, Pub/Sub</td><td>Cases, ledger sink and payee SQL, alert fan-out</td><td>Switched on by env var; same code path</td></tr>
+  </table>
+  <div class="footer"><span>/api/health reports the live model ids</span><span>7 / 14</span></div>
+</section>
+
+<!-- 8 THE AGENT -->
+<section class="slide">
+  <div class="eyebrow">The agent</div>
+  <h2>An ADK pipeline that can only make the bank stricter</h2>
+  <div class="cols">
+    <div class="col">
+      <h3><span class="pill navy">1</span> risk_investigator</h3>
+      <ul>
+        <li><span class="kbd">lookup_payee_risk</span>: ledger features, band, lineage</li>
+        <li><span class="kbd">check_regulated_entity</span>: official-advisory table (I4C, RBI, SPF, MAS, SEBI, NPCI), then Search grounding</li>
+        <li>Writes a 120-word findings note</li>
+      </ul>
+      <h3 style="margin-top:34px;"><span class="pill navy">2</span> decision_agent</h3>
+      <ul>
+        <li><span class="kbd">place_payment_hold</span>: the human-in-the-loop action node</li>
+        <li>Message written in the customer's language with concrete evidence</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="callout green" style="margin-bottom:30px;"><b>Fast path first.</b> The deterministic policy acts in under 100 ms. The agent lands 11 to 17 s later with evidence and a trace.</div>
+      <div class="callout red" style="margin-bottom:30px;"><b>Policy floor.</b> final = max(agent, policy). The agent confirms or upgrades, never relaxes a hold. A failed agent leaves the policy in force.</div>
+      <div class="callout"><b>Human in the loop.</b> A hold is a pause: one-tap override with a typed amount, voice Q&amp;A, 30-minute expiry. Every step is on the case timeline.</div>
+    </div>
+  </div>
+  <div class="footer"><span>app/agents/pipeline.py &middot; app/agents/tools.py &middot; app/agents/advisories.py</span><span>8 / 14</span></div>
+</section>
+
+<!-- 9 WHERE THE DATA COMES FROM -->
+<section class="slide">
+  <div class="eyebrow">Where the data comes from</div>
+  <h2>Payee risk is the bank's own ledger, with lineage</h2>
+  <table style="font-size:27px;">
+    <tr><th style="width:28%">Feature</th><th style="width:36%">Source in production</th><th>In this prototype</th></tr>
+    <tr><td>fan_in_48h, cash_out_ratio_7d, dormant_days, account_age</td><td>Bank or PSP ledger, scored by sql/payee_risk.sql on a schedule</td><td>Synthetic UPI ledger stream: 12,500+ transactions over 7 days, ~150 new per minute, 64 payees, same formula live</td></tr>
+    <tr><td>fri_level</td><td>DoT Financial Risk Indicator feed</td><td>Static registry value</td></tr>
+    <tr><td>linked_complaints_1930</td><td>I4C suspect registry via the bank</td><td>Static registry value</td></tr>
+    <tr><td>kyc_tier</td><td>Bank KYC</td><td>Static registry value</td></tr>
+  </table>
+  <div class="cols" style="margin-top:34px;">
+    <div class="col"><div class="callout">Score = 0.30 fan-in + 0.20 cash-out + 0.15 dormancy + 0.15 FRI + 0.15 complaints + 0.05 new account. Many payers alone is a shop; the combination is a mule.</div></div>
+    <div class="col"><div class="callout green">Every payee card carries a lineage record: source, transactions in window, computed-at time, which fields are registry values, which sinks (Pub/Sub, BigQuery) mirror the stream.</div></div>
+  </div>
+  <div class="footer"><span>Synthetic ledger in this prototype; no bank data was used. Production: Pub/Sub to BigQuery, scheduled SQL, Firestore lookup.</span><span>9 / 14</span></div>
+</section>
+
+<!-- 10 EVALUATION -->
+<section class="slide">
+  <div class="eyebrow">Evaluation</div>
+  <h2>50 labelled calls, including the ones written to fool it</h2>
+  <div class="cols">
+    <div class="col" style="flex:0 0 620px;">
+      <table class="cm">
+        <tr><th></th><th>Pred scam</th><th>Pred benign</th></tr>
+        <tr><th>Scam (25)</th><td class="good">25</td><td class="bad">0</td></tr>
+        <tr><th>Benign (25)</th><td class="bad">0</td><td class="good">25</td></tr>
+      </table>
+      <p style="font-size:24px; color:#4b5563; margin-top:16px;">Call-level detection at the 0.70 hold threshold, gemini-3.5-flash rubric</p>
+    </div>
+    <div class="col">
+      <ul style="font-size:30px;">
+        <li>Hindi, Hinglish, English, Singapore English, Kannada, Tamil</li>
+        <li>10 hard negatives: real police, hospital deposit, harsh landlord, SEBI adviser</li>
+        <li>10 rubric-gaming scams: no "arrest", "OTP" or "safe account" said aloud</li>
+        <li>Payment-decision accuracy 0.974: the one miss is a by-design <b>warn</b> on an ambiguous job-scam call</li>
+        <li>System tests: smoke_ws (API + Live voice), smoke_live_audio (real Hindi speech through the relay, risk 0.9 to 1.0, whisper fired), two-way relay</li>
+      </ul>
+    </div>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="v">1.00</div><div class="l">precision</div></div>
+    <div class="metric"><div class="v">1.00</div><div class="l">recall / F1</div></div>
+    <div class="metric"><div class="v">0.974</div><div class="l">payment-decision accuracy</div></div>
+    <div class="metric"><div class="v">0.932</div><div class="l">per-signal accuracy (8 x 50)</div></div>
+    <div class="metric"><div class="v">2.4 s</div><div class="l">mean rubric latency, uncontended (5.3 s contended)</div></div>
+  </div>
+  <div class="footer"><span>scripts/eval.py &middot; data/eval/calls.json &middot; docs/EVAL_RESULTS.md</span><span>10 / 14</span></div>
+</section>
+
+<!-- 11 PRIVACY BY DESIGN -->
+<section class="slide">
+  <div class="eyebrow">Privacy by design</div>
+  <h2>The customer chooses the tier; it works at every tier</h2>
+  <table class="tiers" style="font-size:25px;">
+    <tr><th style="width:22%">Tier</th><th style="width:40%">Rakshak uses</th><th style="width:22%">Leaves the phone</th><th>Status</th></tr>
+    <tr><td>0: no audio</td><td>Call in progress + pay screen + payee risk + profile</td><td>Only the payment request</td><td>Design; policy runs with call risk 0</td></tr>
+    <tr><td>1: on-device transcript</td><td>Rolling 60 s transcript on the device; scores sent only when Pay is attempted</td><td>Scores + last window, at Pay only</td><td>Design; needs an OS or OEM audio channel</td></tr>
+    <tr><td>2: cloud, lawful channel</td><td>Live transcription for in-app calls, telco forks or OS-vendor feeds</td><td>Audio stream (not retained), transcript on the case</td><td>This prototype</td></tr>
+  </table>
+  <div class="cols" style="margin-top:26px;">
+    <div class="col"><ul style="font-size:28px;"><li>Opt-in with a visible "Rakshak ON" pill</li><li>Raw audio never written to disk</li><li>The caller never hears the whisper</li><li>Override always available; holds expire</li></ul></div>
+    <div class="col"><div class="callout red" style="font-size:25px; padding:20px 28px;"><b>The cellular-call answer.</b> No third-party app can tap a cellular call on Android 10+ or iOS. So Rakshak runs bank-side: in-app calls, telco audio forks (FICO Scam Signal precedent) or OS-vendor feeds. Google is the one company that can wire Pixel scam detection to a GPay hold; Rakshak is the bank-side half.</div></div>
+  </div>
+  <div class="footer"><span>docs/PRIVACY_TIERS.md &middot; docs/SECURITY_PRIVACY.md (DPDP Act, MAS SRF and PDPA notes)</span><span>11 / 14</span></div>
+</section>
+
+<!-- 12 IMPACT AND BUSINESS CASE -->
+<section class="slide">
+  <div class="eyebrow">Impact and business case</div>
+  <h2>Who pays, what it costs, how it scales</h2>
+  <div class="cols">
+    <div class="col">
+      <h3>Who buys</h3>
+      <p style="font-size:30px;">Banks, UPI and PayNow apps that carry the liability under MAS's Shared Responsibility Framework and RBI's customer-protection rules, and the recovery cost of every missed scam.</p>
+      <h3>What they get</h3>
+      <p style="font-size:30px;">Fewer authorised-push-payment losses, an auditable case with a drafted 1930 or ASCom referral per intervention, and a customer who was protected instead of blamed.</p>
+      <h3>Cost per call</h3>
+      <p style="font-size:30px;">Two Live sessions, 10 to 20 flash rubric calls, one cached clip, one ADK run: cents per guarded call at flash-tier prices, versus a &#8377;2 lakh transfer.</p>
+    </div>
+    <div class="col">
+      <h3>Scale path on Google Cloud</h3>
+      <ul style="font-size:30px;">
+        <li>Sessions and cases in Firestore (multi-instance, durable)</li>
+        <li>Alerts fanned out through Pub/Sub to SMS, push, dialler</li>
+        <li>Ledger to BigQuery; sql/payee_risk.sql as a scheduled query; materialised for sub-10 ms lookup</li>
+        <li>ADK pipeline on Vertex AI Agent Runtime; profiles in Memory Bank</li>
+        <li>Cloud Run: WebSockets, session affinity, min instances; stateless beyond the live call</li>
+      </ul>
+      <div class="callout green" style="margin-top:20px; font-size:27px;">Ships as an SDK in the bank app (consent, mic, pay hook) plus the bank-side service; a telco variant streams the call like the Twilio bridge.</div>
+    </div>
+  </div>
+  <div class="footer"><span>Pricing model stated as a hypothesis: per protected account per month, or per intervention</span><span>12 / 14</span></div>
+</section>
+
+<!-- 13 ROADMAP AND LIMITATIONS -->
+<section class="slide">
+  <div class="eyebrow">Roadmap and limitations</div>
+  <h2>What is real, what is synthetic, what comes next</h2>
+  <div class="cols">
+    <div class="col">
+      <h3 style="color:#e5484d;">Honest limitations</h3>
+      <ul style="font-size:30px;">
+        <li>Ledger and calls are synthetic; no bank partner yet</li>
+        <li>Twilio bridge is one-way: the voice plays on the app, not into the PSTN call</li>
+        <li>Kannada and Tamil voice not reviewed by native speakers</li>
+        <li>Tier 1 on-device is a design, not code</li>
+        <li>Prototype endpoints are open; single always-on instance for the demo</li>
+        <li>The agent's own decision lands 11 to 17 s after the fast path</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h3 style="color:#30a46c;">Next 90 days</h3>
+      <ul style="font-size:30px;">
+        <li>Real mule features from a bank ledger through sql/payee_risk.sql</li>
+        <li>ADK pipeline on Vertex AI Agent Runtime; profiles on Memory Bank</li>
+        <li>Bidirectional telco stream so the barge-in reaches the call</li>
+        <li>Native-speaker review of Kannada and Tamil</li>
+        <li>Bank pilot behind Firebase Auth and App Check</li>
+        <li>Human-labelled real call corpus for the evaluation</li>
+      </ul>
+      <div class="callout" style="margin-top:14px; font-size:27px;"><b>The ask:</b> one bank fraud team and one telco to pilot.</div>
+    </div>
+  </div>
+  <div class="footer"><span>README.md: Limitations and roadmap</span><span>13 / 14</span></div>
+</section>
+
+<!-- 14 CLOSING -->
+<section class="slide dark">
+  <div class="eyebrow" style="color:#8ab4f8">Try it as a judge in 60 seconds</div>
+  <h2 style="color:#fff;">Rakshak: stop the scam at the moment of payment</h2>
+  <ol class="steps" style="max-width:1500px; margin-top:20px;">
+    <li>Open <span class="kbd">rakshak-223197895518.asia-southeast1.run.app/?session=judge&amp;user=demo-user</span>, finish the three onboarding taps</li>
+    <li>Tap <b>Test an incoming call</b>, choose <b>Parcel from Taiwan</b>, tap <b>Auto-play script</b>; watch the gauge and the Hindi reasons</li>
+    <li>When the toast says the caller demands payment: <b>Open UPI pay</b>, then <b>Pay</b></li>
+    <li>See the hold, hear Rakshak in Hindi, then open <span class="kbd">/desk</span> for the agent trace and the 1930 referral</li>
+  </ol>
+  <div style="position:absolute; left:110px; bottom:130px;">
+    <p style="font-size:32px; color:#d6e0f0; margin-bottom:8px;">Live: https://rakshak-223197895518.asia-southeast1.run.app</p>
+    <p style="font-size:32px; color:#d6e0f0; margin-bottom:8px;">Code: https://github.com/devaramanelohith/rakshak-agent</p>
+    <p style="font-size:32px; color:#d6e0f0;">Team Rakshak &middot; [names and contact]</p>
+  </div>
+  <div class="footer"><span>Theme: BFSI &middot; Gemini 3.5 / 3.8 &middot; ADK 2.11 &middot; Cloud Run</span><span>14 / 14</span></div>
+</section>
+
+</body>
+</html>

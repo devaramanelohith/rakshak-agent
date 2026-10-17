@@ -92,7 +92,8 @@ function setLinks() {
   [['callerLink', call], ['callerLink2', call], ['familyLink', fam], ['familyLink2', fam]].forEach(([id, href]) => { const el = $(id); if (el) el.href = href; });
 }
 // Everything that shows the customer's name: greeting, customer switch label, document title.
-function renderIdentity() {
+function renderBalance() { const el = $('balanceText'); if (!el) return; el.textContent = (S.profile && S.profile.language === 'en-sg') ? 'S$48,231' : '₹4,82,310'; }
+function renderIdentity() { renderBalance();
   const p = S.profile || {}; const name = p.name || S.userId;
   $('homeName').textContent = `${GREETING[p.language] || GREETING.en}, ${name}`;
   const label = (pr) => [pr.name || pr.user_id, pr.age_band, LANG_NAMES[pr.language] || pr.language].filter(Boolean).join(' · ');
