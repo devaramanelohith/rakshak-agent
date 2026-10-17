@@ -12,9 +12,13 @@ Every one of those losses passed through the same moment: the victim, still on t
 
 Rakshak is a guardian agent that lives inside the bank app. With the customer's opt-in it listens to the call, transcribing each speaker on its own Gemini Live session and scoring the coercion after every sentence: authority impersonation, threats, secrecy, urgency, a safe-account demand, an OTP request. At 85 percent it whispers to the customer, privately. The caller never hears it.
 
-Then the customer taps Pay. In under a hundred milliseconds the bank's own policy fuses the call risk with the payee's mule risk, computed from the ledger: twelve payers in 48 hours, 96 percent cashed out in a week, four complaints on the 1930 helpline. The transfer is paused for thirty minutes. The screen changes first, and then Rakshak speaks, in Hindi, over the scammer's voice: "Sunita ji, this payment is paused. This account received money from twelve people in two days. Priya has been told." Her daughter's phone chimes at the same moment.
+Here is what that looks like. Lohith, a small-business owner, takes a call in English from the "Cyber Crime Branch, Mumbai". A non-bailable warrant, digital arrest, do not tell your family, install our verification app, and then: "Open your UPI app. The ID is police.hq.escrow@rakshakdemo. Transfer five lakh forty thousand now, while I watch."
 
-Fifteen seconds later an ADK agent lands with the evidence. The investigator looked up the payee and checked the caller's claim against official advisories: the CBI does not do digital arrests, with the source. The decision agent confirmed the hold and wrote the reasons in Sunita's language. The agent can make the bank stricter, never looser; the policy is the floor. And Sunita keeps control: she can type the amount and pay anyway, or ask Rakshak why, by voice, and get an answer.
+Lohith taps Pay. In under a hundred milliseconds the bank's own policy fuses the call risk with the payee's mule risk, computed from the ledger: an account twelve days old, five payers in 48 hours, 99 percent cashed out in a week, two complaints on the 1930 helpline. The transfer is paused for thirty minutes. The screen changes first, and then Rakshak speaks, in English, over the scammer's voice: "Please stop. I am Rakshak, your bank's safety assistant. No police, CBI or RBI officer ever asks for money over UPI." It tells him the account he is paying was emptied by many people's money in two days, that the payment is paused for thirty minutes, and that Priya has been notified. His sister's phone chimes at the same moment.
+
+Fifteen seconds later an ADK agent lands with the evidence. The investigator looked up the payee and checked the caller's claim against official advisories: the CBI does not do digital arrests, with the source. The decision agent confirmed the hold and wrote the reasons in the customer's language. The agent can make the bank stricter, never looser; the policy is the floor. And Lohith keeps control: he can type the amount and pay anyway, or ask Rakshak why, by voice, and get an answer.
+
+The whole guardian, the whisper, the hold voice, the reasons and the post-hold conversation, speaks the customer's language: English today, and also Hindi, Hinglish, Kannada, Tamil and Singapore English. Switch the demo customer to Sunita Rao, a 67-year-old pensioner, and the same call is stopped in Hindi.
 
 On fifty labelled calls in six languages, including ten written specifically to evade keyword detection, precision and recall are one point zero, and the payment decision is right on 38 of 39 attempts. The one miss is a warn, on purpose, on a small payment to a clean account.
 
@@ -26,7 +30,7 @@ Scam detection is a crowded field. Stopping the payment, with the evidence, in t
 
 Eighty-two percent of Singapore's scam cases last year were transfers the victim made themselves, while the scammer was still on the line. Pixel can hear that call but only warns. The bank sees the payee but not the call. The SMS comes after the money has gone.
 
-Rakshak is a guardian inside the bank app. With the customer's opt-in it transcribes the call speaker by speaker with Gemini Live and scores the coercion after every sentence. When the customer taps Pay, it fuses that call risk with the payee's mule risk from the ledger and, in under a hundred milliseconds, pauses the transfer for thirty minutes, speaks to the customer in Hindi over the caller, shows the payee's history and tells the daughter. An ADK agent then confirms with evidence from official advisories; it can only make the decision stricter. The customer keeps a typed-amount override and a voice channel to ask why.
+Rakshak is a guardian inside the bank app. With the customer's opt-in it transcribes the call speaker by speaker with Gemini Live and scores the coercion after every sentence. When the customer taps Pay, it fuses that call risk with the payee's mule risk from the ledger and, in under a hundred milliseconds, pauses the transfer for thirty minutes, speaks to the customer over the caller in their own language (English in the demo; Hindi, Hinglish, Kannada, Tamil and Singapore English are built in), shows the payee's history and tells the trusted contact. An ADK agent then confirms with evidence from official advisories; it can only make the decision stricter. The customer keeps a typed-amount override and a voice channel to ask why.
 
 Fifty labelled calls in six languages, ten of them adversarial: precision and recall one point zero. Five Gemini models, ADK 2.11, Cloud Run. Live now; try it in sixty seconds.
 
@@ -34,7 +38,7 @@ Fifty labelled calls in six languages, ten of them adversarial: precision and re
 
 A risk meter during a call is prior art. Pixel ships it in Hindi; five Indian hackathon repos built it this year. If the judge's lasting image of Rakshak is a gauge climbing, Rakshak is filed under "scam detection, seen it".
 
-So in every pitch, demo and video: ten seconds on the meter, then get to Pay. The climax is the hold screen: the pause, the Hindi voice over the caller, the payee card with the ledger numbers and lineage, "Priya has been notified", the agent confirming with the advisory source, and the three exits. Everything before it is setup. Nothing after it should be longer than the hold itself.
+So in every pitch, demo and video: ten seconds on the meter, then get to Pay. The climax is the hold screen: the pause, Rakshak's English voice over the caller, the payee card with the ledger numbers and lineage, "Priya (sister) has been notified", the agent confirming with the advisory source, and the three exits. Everything before it is setup. Nothing after it should be longer than the hold itself.
 
 When a judge asks a question during the demo, answer with the hold screen in view. Do not navigate away from it to show the architecture; the architecture is on slide 6 and in the fraud desk trace.
 
@@ -43,11 +47,13 @@ When a judge asks a question during the demo, answer with the hold screen in vie
 From the README, on the deployed service, no install:
 
 1. Open `https://rakshak-223197895518.asia-southeast1.run.app/?session=judge&user=demo-user` on a phone or laptop. Finish the three onboarding taps.
-2. Tap **Test an incoming call**, choose **Parcel from Taiwan (CBI digital arrest, Hindi)**, tap **Auto-play script**. Watch the transcript, the risk gauge and the Hindi reasons.
-3. When the toast says the caller is demanding payment, tap **Open UPI pay** (the VPA `cbi.verification@rakshakdemo` and 2,50,000 rupees are pre-filled), then **Pay**.
-4. See the hold screen within a second, hear Rakshak in Hindi, and open `https://rakshak-223197895518.asia-southeast1.run.app/desk` for the case with the agent trace and the 1930 referral.
+2. Tap **Test an incoming call**, choose **Cyber Crime Branch money-laundering case (English)** (pre-selected for the English customer, Lohith), tap **Auto-play script**. Watch the transcript, the risk gauge and the English reasons; at 85 percent the private whisper plays.
+3. When the toast says the caller is demanding payment, tap **Open UPI pay** (the VPA `police.hq.escrow@rakshakdemo` and 5,40,000 rupees are pre-filled), then **Pay**.
+4. See the hold screen within a second, hear Rakshak in English ("Please stop. I am Rakshak, your bank's safety assistant..."), see "Priya (sister) has been notified", and open `https://rakshak-223197895518.asia-southeast1.run.app/desk` for the case with the agent trace and the 1930 referral.
 
-What to say while it runs: "Every payee handle ends in @rakshakdemo, which does not exist on UPI; nothing moves money. The daughter's phone is at /family if you want to see the alert arrive."
+What to say while it runs: "Every payee handle ends in @rakshakdemo, which does not exist on UPI; nothing moves money. Priya's phone is at /family if you want to see the alert arrive."
+
+Optional vernacular run: open the same URL with `&user=demo-user-hi` (Sunita Rao, 60+, Hindi) and choose **Parcel from Taiwan (CBI digital arrest, Hindi)**; the whisper, hold voice and reasons switch to Hindi.
 
 If the judge has a second phone: phone B opens `/call?session=judge2`, phone A opens `/?session=judge2&user=demo-user`; B taps Call, A answers, they talk, A pays. That is the live path with real speech.
 

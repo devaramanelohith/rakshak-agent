@@ -38,33 +38,36 @@ The product story is identical at every layer; only the audio source changes. Ne
 
 ## 3. Exactly how the Singapore stage demo runs (L2): three phones, one call
 
-**Pages.** Customer phone: `/` (Sunita's bank app). Caller phone: `/call?session=<id>` (a phone-style dialer: Call, mute, hang up, plus a script prompter). Family phone: `/family?user=demo-user` (Priya's phone; alerts arrive with a chime). Projector: `/desk`. The session id is under "Demo controls" on the customer phone, and the caller/family links there carry it.
+**Primary script.** `script_03` "Cyber Crime Branch money-laundering case (English)" with the default customer `demo-user` (Lohith, English, trusted contact Priya (sister)). The competition is JAPAC-wide, so the headline run is in English end to end: the caller, the whisper, the hold voice and the reasons. The optional second run is the Hindi persona `demo-user-hi` (Sunita Rao, 60+, trusted contact Priya (daughter)) with `script_01` "Parcel from Taiwan"; use it only if time allows, to show the vernacular path.
 
-**Flow.** The caller taps Call: the customer's phone rings (sheet with the number, Answer / Decline, ring tone and vibration). The judge answers; the mic switches on automatically and both parties hear each other through the relay. The teammate speaks the script (or taps "Say" lines in the prompter if they prefer not to speak). Transcript, gauge and reasons update live; the whisper fires privately at 85%. At the payment demand the judge opens Pay, the fields are pre-filled when a script is running, and the hold fires; Priya's phone chimes with the alert at the same moment.
+**Pages.** Customer phone: `/?session=<id>&user=demo-user` (Lohith's bank app; `&user=demo-user-hi` switches to the Hindi persona). Caller phone: `/call?session=<id>` (a phone-style dialer: Call, mute, hang up, plus a script prompter). Family phone: `/family?user=demo-user` (Priya's phone; alerts arrive with a chime). Projector: `/desk`. The session id is under "Demo controls" on the customer phone, and the caller/family links there carry it.
+
+**Flow.** The caller taps Call: the customer's phone rings (sheet with the number, Answer / Decline, ring tone and vibration). The judge answers; the mic switches on automatically and both parties hear each other through the relay. The teammate speaks `script_03` from the prompter (or taps "Say" lines if they prefer not to speak): "This is the Cyber Crime Branch, Mumbai", the non-bailable warrant, digital arrest, the PMLA secrecy line, the "Police Verification app". Transcript, gauge and English reasons update live; the whisper fires privately at 85% ("Rakshak here: careful. This call looks like a scam."). At the payment demand ("The ID is police.hq.escrow@rakshakdemo. Transfer five lakh forty thousand now, while I watch.") the judge opens Pay, the fields are pre-filled (`police.hq.escrow@rakshakdemo`, Rs 5,40,000), taps Pay, and the hold fires: the hold screen, Rakshak's English barge-in ("Please stop. I am Rakshak, your bank's safety assistant. No police, CBI or RBI officer ever asks for money over UPI..."), the payee card (high band, 5 payers in 48 h, 99% cashed out, 2 helpline complaints), and "Priya (sister) has been notified"; Priya's phone chimes with the alert at the same moment.
 
 **Audio hygiene.** Both phones on the same Wi-Fi or hotspot; the caller wears earphones (otherwise the customer phone's speaker feeds back into the caller mic); the customer phone on speaker so the room hears Rakshak's barge-in. Chrome on Android or Safari on iOS; grant the microphone on first use (HTTPS, so the Cloud Run URL works; a laptop hotspot plus a local server needs `--ssl` or the scripted "Say" path).
 
 ### Legacy wording (operator console)
 
 
-**Devices.** Phone A (victim) opens `https://<cloud-run-url>/?user=demo-user` in Chrome. Laptop B (caller) opens
+**Devices.** Phone A (victim) opens `https://<cloud-run-url>/?user=demo-user` (Lohith, English) in Chrome. Laptop B (caller) opens
 `/scammer?session=<id>` (the session id is printed on Phone A's home screen). A third screen (projector) shows
 `/desk`. Phone A on speaker is fine; the WebSocket relay has echo cancellation enabled in the mic constraints.
 
 **Script (2 min 40 s).**
 
 1. Phone A: Guardian mode is on (pill visible). Tap *Simulate incoming call*. Tap *Use my mic*. The judge holds Phone A.
-2. Laptop B: teammate reads `script_01` ("CBI Mumbai inspector", Hindi) or `script_04` (Singapore "MAS officer", PayNow)
-   into the laptop mic. Phone A plays their voice; the live transcript appears; the risk meter climbs; reasons appear
-   in the customer's language. At ~85% Rakshak **whispers** to the victim only (the "caller" does not hear it).
+2. Laptop B: teammate reads `script_03` ("Cyber Crime Branch", English) into the laptop mic. Phone A plays their
+   voice; the live transcript appears; the risk meter climbs; reasons appear in English. At ~85% Rakshak **whispers**
+   to the victim only (the "caller" does not hear it). Optional second run: `?user=demo-user-hi` with `script_01`
+   ("Parcel from Taiwan", Hindi) or `?user=demo-user-en` with `script_04` (Singapore "MAS officer", PayNow).
 3. On the line marked `payment_demand`, the judge taps *Open UPI pay*. The VPA and amount are pre-filled if a script
    is running, or the teammate reads them out. The judge taps *Pay*.
-4. **Climax (keep the camera here).** Within ~1 s: the hold screen, the voice barge-in in Hindi/English, the 30:00
-   countdown, the payee mule-risk card (12 payers in 48 h, 96% cashed out, 4 helpline complaints), and
-   "Priya (daughter) has been notified". A few seconds later the ADK trace lands on the fraud desk (investigator tool
+4. **Climax (keep the camera here).** Within ~1 s: the hold screen, the English voice barge-in, the 30:00
+   countdown, the payee mule-risk card (`police.hq.escrow@rakshakdemo`: 5 payers in 48 h, 99% cashed out, 2 helpline
+   complaints), and "Priya (sister) has been notified". A few seconds later the ADK trace lands on the fraud desk (investigator tool
    calls, authority check with its advisory source, decision agent, narrative, 1930 referral).
 5. Show the override: tap *I know this person*, the app asks to type the amount, cancel. Then tap *Talk to Rakshak*
-   and ask "why did you stop this?"; Rakshak answers by voice (Gemini Live) and can offer to call the daughter.
+   and ask "why did you stop this?"; Rakshak answers by voice (Gemini Live) and can offer to call Priya.
 6. Switch to `/desk`: the case, the trace, the "SMS alert vs Rakshak" comparison, the eval table.
 
 **If the mic path misbehaves on stage:** on Laptop B click the script lines' *Say* buttons instead of speaking (L1).
@@ -91,8 +94,8 @@ Record L1 (voiced replay) on a phone screen-recorder, with the fraud desk on a s
 | Time | Shot |
 |---|---|
 | 0:00-0:20 | one slide: 81.8% of Singapore scam losses are self-authorised; India lost ₹22,495 crore in 2025; alerts after the transfer are too late |
-| 0:20-0:50 | Phone: Guardian on, scripted CBI call plays, meter climbs, Hindi reasons, whisper |
-| 0:50-1:40 | **Payment screen**: Pay → barge-in voice → hold + payee card + daughter notified → override dialog (not used) |
+| 0:20-0:50 | Phone: Guardian on, scripted Cyber Crime Branch call (English) plays, meter climbs, English reasons, whisper |
+| 0:50-1:40 | **Payment screen**: Pay → barge-in voice → hold + payee card + Priya (sister) notified → override dialog (not used) |
 | 1:40-2:20 | Fraud desk: ADK trace, advisory source, narrative, 1930 referral, SMS-vs-Rakshak |
 | 2:20-2:50 | Architecture slide, eval table, Live Q&A clip |
 | 2:50-2:58 | "Deployed on Cloud Run; Gemini 3.8 / 3.5, ADK 2.11; repo link" |
