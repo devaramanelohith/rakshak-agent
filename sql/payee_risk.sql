@@ -36,15 +36,15 @@ WITH inflow AS (
 SELECT *,
   -- transparent, monotone score; swap for a Vertex AI / BQML model when labelled mule data exists
   LEAST(1.0,
-    0.30 * (fan_in_48h >= 8) + 0.20 * (cash_out_ratio_7d >= 0.8) + 0.15 * (dormant_days_before_burst >= 30)
+    0.30 * (fan_in_48h >= 8) + 0.15 * (fan_in_48h BETWEEN 4 AND 7) + 0.20 * (cash_out_ratio_7d >= 0.8) + 0.15 * (dormant_days_before_burst >= 30)
     + 0.15 * (fri_level IN ('high','very_high')) + 0.15 * (linked_complaints_1930 > 0) + 0.05 * (account_age_days < 30)
   ) AS mule_risk_score,
   -- band follows the score: many payers alone is normal for a shop; it is the combination that marks a mule
-  CASE WHEN LEAST(1.0, 0.30 * (fan_in_48h >= 8) + 0.20 * (cash_out_ratio_7d >= 0.8) + 0.15 * (dormant_days_before_burst >= 30)
+  CASE WHEN LEAST(1.0, 0.30 * (fan_in_48h >= 8) + 0.15 * (fan_in_48h BETWEEN 4 AND 7) + 0.20 * (cash_out_ratio_7d >= 0.8) + 0.15 * (dormant_days_before_burst >= 30)
                     + 0.15 * (fri_level IN ('high','very_high')) + 0.15 * (linked_complaints_1930 > 0) + 0.05 * (account_age_days < 30)) >= 0.85 THEN 'critical'
-       WHEN LEAST(1.0, 0.30 * (fan_in_48h >= 8) + 0.20 * (cash_out_ratio_7d >= 0.8) + 0.15 * (dormant_days_before_burst >= 30)
+       WHEN LEAST(1.0, 0.30 * (fan_in_48h >= 8) + 0.15 * (fan_in_48h BETWEEN 4 AND 7) + 0.20 * (cash_out_ratio_7d >= 0.8) + 0.15 * (dormant_days_before_burst >= 30)
                     + 0.15 * (fri_level IN ('high','very_high')) + 0.15 * (linked_complaints_1930 > 0) + 0.05 * (account_age_days < 30)) >= 0.65 THEN 'high'
-       WHEN LEAST(1.0, 0.30 * (fan_in_48h >= 8) + 0.20 * (cash_out_ratio_7d >= 0.8) + 0.15 * (dormant_days_before_burst >= 30)
+       WHEN LEAST(1.0, 0.30 * (fan_in_48h >= 8) + 0.15 * (fan_in_48h BETWEEN 4 AND 7) + 0.20 * (cash_out_ratio_7d >= 0.8) + 0.15 * (dormant_days_before_burst >= 30)
                     + 0.15 * (fri_level IN ('high','very_high')) + 0.15 * (linked_complaints_1930 > 0) + 0.05 * (account_age_days < 30)) >= 0.35 THEN 'medium'
        ELSE 'low' END AS risk_band,
   ARRAY<STRING>[] AS reasons

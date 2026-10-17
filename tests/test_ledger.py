@@ -43,3 +43,38 @@ def test_tick_adds_transactions_and_lookup_has_lineage():
     if isinstance(row["lineage"], dict):
         assert row["lineage"]["source"] == "simulated_ledger" and "n_transactions" in row["lineage"]
     assert row["risk_band"] in ("critical", "high")
+
+
+def test_ledger_stays_calibrated_over_three_days_of_uptime(monkeypatch):
+    """Regression: the stream used to give mule accounts a new victim on every tick, so a long-running instance
+    showed hundreds of payers in 48 h for an account profiled with five."""
+    import time as real_time
+
+    import app.ledger as L
+
+    clock = {"t": real_time.time()}
+
+    class FakeTime:
+        @staticmethod
+        def time():
+            return clock["t"]
+
+    monkeypatch.setattr(L, "time", FakeTime)
+    payees = all_payees()
+    sim = LedgerSimulator(payees, seed=5)
+    for _ in range(int(3 * 86400 / 30)):
+        clock["t"] += 30
+        sim.tick(batch=12, tick_s=30)
+    worst = 0.0
+    crit_ok = crit_n = 0
+    for p in payees:
+        f = sim.features(p["vpa"])
+        assert f is not None
+        base = max(int(p.get("fan_in_48h") or 1), 5)
+        worst = max(worst, f["fan_in_48h"] / base)
+        if p["risk_band"] == "critical":
+            crit_n += 1
+            _, band, _ = score_features(f, p)
+            crit_ok += band in ("critical", "high")
+    assert worst <= 3.0, f"fan-in drifted to {worst:.1f}x its profile"
+    assert crit_ok >= crit_n * 0.8

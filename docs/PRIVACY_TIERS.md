@@ -37,7 +37,7 @@ The mule-risk features are the payment provider's own ledger, not the customer's
 | linked_complaints_1930 | complaints naming this payee | I4C Suspect Registry via the bank | static demo value |
 | kyc_tier | min or full KYC | bank KYC | static demo value |
 
-The score and band are computed with one formula, in `sql/payee_risk.sql` for BigQuery and in `app/ledger.py` for the stream: 0.30 x (fan_in >= 8) + 0.20 x (cash-out >= 0.8) + 0.15 x (dormant >= 30 days) + 0.15 x (FRI high) + 0.15 x (complaints > 0) + 0.05 x (age < 30 days). Many payers alone is normal for a shop or a hospital; it is the combination with cash-out, dormancy, a new account or registry hits that marks a mule.
+The score and band are computed with one formula, in `sql/payee_risk.sql` for BigQuery and in `app/ledger.py` for the stream: 0.30 x (fan_in >= 8) + 0.15 x (4 <= fan_in < 8) + 0.20 x (cash-out >= 0.8) + 0.15 x (dormant >= 30 days) + 0.15 x (FRI high) + 0.15 x (complaints > 0) + 0.05 x (age < 30 days). Many payers alone is normal for a shop or a hospital; it is the combination with cash-out, dormancy, a new account or registry hits that marks a mule.
 
 Every payee card carries a lineage record: where the features came from (`simulated_ledger`, `bigquery` or `demo_risk_table`), how many transactions were in the window, when they were computed, which fields are registry values, and which sinks (Pub/Sub, BigQuery) the stream is mirrored to. The fraud desk shows it; RBI's FREE-AI survey found most regulated entities lack exactly this lineage.
 

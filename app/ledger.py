@@ -45,6 +45,8 @@ class LedgerSimulator:
         self.history: dict[str, dict] = {}  # per vpa: first_seen_ts, last_tx_before_window_ts, prior_tx_count
         self.total_generated = 0
         self.started_at = time.time()
+        self.seeded_at = self.started_at
+        self.payer_pool: dict[str, list[str]] = {}
         self.last_tick = 0.0
         self.sinks: list[str] = []
         self._pending_sink: list[Tx] = []
@@ -75,7 +77,7 @@ class LedgerSimulator:
         cash = float(p.get("cash_out_ratio_7d") or 0.1)
         if band in ("critical", "high"):
             # burst in the last 48 h from many distinct payers, then rapid cash-out
-            burst_start = t1 - WINDOW_48H * r.uniform(0.6, 1.0)
+            burst_start = t1 - WINDOW_48H * r.uniform(0.45, 0.75)
             n = max(fan_in, 8 if band == "critical" else 5)
             for i in range(n):
                 ts = r.uniform(burst_start, t1 - 600)
@@ -88,15 +90,17 @@ class LedgerSimulator:
                 out.append(Tx(uuid.uuid4().hex[:12], min(t1 - 60, max(t.ts for t in out) + r.uniform(600, 7200)), vpa, f"mule{r.randint(10, 99)}@rakshakdemo", round(remaining / k, 2), "cashout"))
         elif band == "medium":
             n = max(2, fan_in)
+            self.payer_pool[vpa] = [f"payer{r.randint(100, 999)}@rakshakdemo" for _ in range(n)]
             for i in range(n):
                 ts = r.uniform(t0, t1 - 600)
-                out.append(Tx(uuid.uuid4().hex[:12], ts, f"payer{r.randint(100, 999)}@rakshakdemo", vpa, round(max(200.0, r.gauss(avg, avg * 0.4)), 2), "inflow"))
+                out.append(Tx(uuid.uuid4().hex[:12], ts, self.payer_pool[vpa][i], vpa, round(max(200.0, r.gauss(avg, avg * 0.4)), 2), "inflow"))
             inflow = sum(t.amount_inr for t in out)
             out.append(Tx(uuid.uuid4().hex[:12], t1 - r.uniform(3600, DAY), vpa, f"acct{r.randint(10, 99)}@rakshakdemo", round(inflow * min(cash, 0.6), 2), "cashout"))
         else:
             # ordinary merchant or individual: steady inflows over the week, low cash-out
             n = max(1, int(fan_in * 3.5)) if fan_in else r.randint(1, 4)
             payers = [f"cust{r.randint(100, 999)}@rakshakdemo" for _ in range(max(1, fan_in))]
+            self.payer_pool[vpa] = payers
             for i in range(n):
                 ts = r.uniform(t0, t1 - 600)
                 out.append(Tx(uuid.uuid4().hex[:12], ts, r.choice(payers), vpa, round(max(50.0, r.gauss(avg, avg * 0.5)), 2), "inflow"))
@@ -110,29 +114,48 @@ class LedgerSimulator:
         key = tx.payee_vpa if tx.kind == "inflow" else tx.payer_vpa
         self.by_payee[key].append(tx)
 
-    def tick(self, batch: int = 12) -> list[Tx]:
-        """Add a few fresh transactions (keeps the demo 'live') and prune beyond 7 days."""
+    def _reseed(self) -> None:
+        """Rebuild the 7-day history relative to now so ages, dormancy and the 48 h windows never drift."""
+        self.txs.clear()
+        self.by_payee.clear()
+        self.history.clear()
+        self.payer_pool.clear()
+        self.seeded_at = time.time()
+        self._seed_history()
+
+    def _events_for(self, lam: float) -> int:
+        n = int(lam)
+        return n + (1 if self.rng.random() < (lam - n) else 0)
+
+    def tick(self, batch: int = 12, tick_s: float = 5.0) -> list[Tx]:
+        """Advance the stream by one step at steady-state rates so the 48 h statistics stay true to each profile:
+        mule accounts receive a new victim at their own profile rate (and forward it within minutes); shops and
+        individuals receive repeat customers from a fixed pool, so distinct-payer counts do not grow with uptime."""
         now = time.time()
+        if now - self.seeded_at > 6 * 3600:
+            self._reseed()
         r = self.rng
         new: list[Tx] = []
-        vpas = list(self.profiles.keys())
-        for _ in range(batch):
-            vpa = r.choice(vpas)
-            p = self.profiles[vpa]
+        non_mule = [v for v, p in self.profiles.items() if p.get("risk_band") not in ("critical", "high")]
+        per_non_mule = batch / max(1, len(non_mule))
+        steps_in_48h = WINDOW_48H / tick_s
+        for vpa, p in self.profiles.items():
             band = p.get("risk_band", "low")
             avg = float(p.get("avg_ticket_inr") or 1500)
             if band in ("critical", "high"):
-                # a mule receives from a new victim and forwards most of it within minutes: keep the ratio true to profile
-                amt = round(max(500.0, r.gauss(avg, avg * 0.35)), 2)
-                tx = Tx(uuid.uuid4().hex[:12], now - r.uniform(5, 30), f"victim{r.randint(100, 999)}@rakshakdemo", vpa, amt, "inflow")
-                self._append(tx)
-                new.append(tx)
-                cash = float(p.get("cash_out_ratio_7d") or 0.9)
-                tx = Tx(uuid.uuid4().hex[:12], now - r.uniform(0, 5), vpa, f"mule{r.randint(10, 99)}@rakshakdemo", round(amt * max(cash, 0.85), 2), "cashout")
+                fan_in = int(p.get("fan_in_48h") or 6)
+                for _ in range(self._events_for(1.2 * fan_in / steps_in_48h)):
+                    amt = round(max(500.0, r.gauss(avg, avg * 0.35)), 2)
+                    self._append(Tx(uuid.uuid4().hex[:12], now - r.uniform(5, 30), f"victim{r.randint(100, 999)}@rakshakdemo", vpa, amt, "inflow"))
+                    cash = max(float(p.get("cash_out_ratio_7d") or 0.9), 0.85)
+                    self._append(Tx(uuid.uuid4().hex[:12], now - r.uniform(0, 5), vpa, f"mule{r.randint(10, 99)}@rakshakdemo", round(amt * cash, 2), "cashout"))
+                    new.extend(list(self.by_payee[vpa])[-2:])
             else:
-                tx = Tx(uuid.uuid4().hex[:12], now - r.uniform(0, 30), f"cust{r.randint(100, 999)}@rakshakdemo", vpa, round(max(50.0, r.gauss(avg, avg * 0.5)), 2), "inflow")
-            self._append(tx)
-            new.append(tx)
+                pool = self.payer_pool.get(vpa) or [f"cust{r.randint(100, 999)}@rakshakdemo"]
+                for _ in range(self._events_for(per_non_mule)):
+                    tx = Tx(uuid.uuid4().hex[:12], now - r.uniform(0, 30), r.choice(pool), vpa, round(max(50.0, r.gauss(avg, avg * 0.5)), 2), "inflow")
+                    self._append(tx)
+                    new.append(tx)
         self.total_generated += len(new)
         self.last_tick = now
         cutoff = now - WINDOW_7D
@@ -241,7 +264,7 @@ def score_features(f: dict, registry: dict) -> tuple[float, str, list[str]]:
     age = f.get("account_age_days")
     fri = (registry.get("fri_level") or "none").lower()
     complaints = int(registry.get("linked_complaints_1930") or 0)
-    score = (0.30 * (fan_in >= 8) + 0.20 * (cash >= 0.8) + 0.15 * (dormant >= 30)
+    score = (0.30 * (fan_in >= 8) + 0.15 * (4 <= fan_in < 8) + 0.20 * (cash >= 0.8) + 0.15 * (dormant >= 30)
              + 0.15 * (fri in ("high", "very_high")) + 0.15 * (complaints > 0) + 0.05 * (age is not None and age < 30))
     score = round(min(1.0, score), 2)
     # Band follows the score: many payers alone is normal for a shop or a hospital; it is the combination with
@@ -257,7 +280,7 @@ def score_features(f: dict, registry: dict) -> tuple[float, str, list[str]]:
     reasons: list[str] = []
     if band == "low":
         return score, band, [f"Steady pattern: {fan_in} regular payers in 48 h, {int(cash * 100)}% moved out this week, account {age} days old" if age is not None else "Steady, ordinary payment pattern"]
-    if fan_in >= 8:
+    if fan_in >= 4:
         reasons.append(f"Received money from {fan_in} different payers in the last 48 hours")
     if cash >= 0.8:
         reasons.append(f"{int(cash * 100)}% of the money received this week was moved out within hours")
@@ -294,7 +317,7 @@ async def run_ticker(interval_s: float = 5.0) -> None:
     while True:
         await asyncio.sleep(interval_s)
         try:
-            sim.tick()
+            sim.tick(batch=12, tick_s=interval_s)
             sim.flush_sinks()
         except Exception as e:  # pragma: no cover
             log.warning("ledger tick failed: %s", e)
