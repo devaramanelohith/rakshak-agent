@@ -109,8 +109,8 @@ def _summarise_event(ev) -> list[dict]:
 async def run_payment_guardian(case: dict) -> tuple[dict | None, list[dict]]:
     """Run the ADK pipeline for `case` (retrying once on the fallback model). Returns (decision or None, trace)."""
     decision, trace = await _run_once(case, settings.model_agent)
-    if decision is None and settings.model_agent_fallback and settings.model_agent_fallback != settings.model_agent \
-            and not any(e.get("text", "").startswith("agent timeout") for e in trace):
+    if decision is None and settings.model_agent_fallback and settings.model_agent_fallback != settings.model_agent:
+        # Retry on the faster fallback model whether the primary errored or ran out of its time budget.
         trace.append({"t": time.time(), "agent": "system", "type": "text", "text": f"retrying on {settings.model_agent_fallback}"})
         d2, t2 = await _run_once(case, settings.model_agent_fallback)
         return d2, trace + t2

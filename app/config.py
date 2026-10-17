@@ -50,7 +50,7 @@ class Settings(BaseModel):
     whisper_threshold: float = 0.85
     hold_minutes: int = Field(default_factory=lambda: int(os.getenv("RAKSHAK_HOLD_MINUTES", "30")))
     carryover_minutes: int = Field(default_factory=lambda: int(os.getenv("RAKSHAK_CARRYOVER_MINUTES", "60")))
-    agent_timeout_s: float = Field(default_factory=lambda: float(os.getenv("RAKSHAK_AGENT_TIMEOUT_S", "60")))
+    agent_timeout_s: float = Field(default_factory=lambda: float(os.getenv("RAKSHAK_AGENT_TIMEOUT_S", "35")))
     agent_sync_wait_s: float = Field(default_factory=lambda: float(os.getenv("RAKSHAK_AGENT_SYNC_WAIT_S", "6")))
     rubric_thinking: str = Field(default_factory=lambda: os.getenv("RAKSHAK_RUBRIC_THINKING", "minimal"))
     agent_thinking: str = Field(default_factory=lambda: os.getenv("RAKSHAK_AGENT_THINKING", "low"))
