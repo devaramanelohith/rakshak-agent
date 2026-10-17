@@ -30,7 +30,7 @@ case the customer can see.
 | Layer | What happens | Needs | Fails how | Use it for |
 |---|---|---|---|---|
 | **L0 Transcript replay** | script lines are posted as text turns; rubric, fusion, hold, TTS all run for real | server + API key | practically never | video B-roll, eval, judge curl test |
-| **L1 Voiced replay** | same as L0 but every caller line is voiced by Gemini TTS on the victim phone (cached) | speakers | TTS quota | **the 3-minute video**; a judge pressing one button |
+| **L1 Voiced replay** | same as L0 but every caller line is voiced by Gemini TTS on the victim phone (cached) | speakers | TTS quota | **the 3 to 4 minute video (target 3:30)**; a judge pressing one button |
 | **L2 Two-device live call** | teammate on the caller console speaks into a mic; victim phone hears them; Gemini transcribe-live + rubric run on real speech; judge pays | two devices on the same server, mics, decent Wi-Fi | mic permission, network | **the Singapore stage demo** |
 | **L3 Real phone number** | judge dials a real Twilio number from their own phone; Twilio dials the "scammer" phone and streams both legs to the server | Twilio number + public URL (Cloud Run) | telco/network, Twilio credit | the "wow" moment if L2 is stable; otherwise skip |
 
@@ -87,7 +87,7 @@ why the repo runs with zero Google Cloud data services configured.
 
 Cost: Twilio trial credit covers a demo; production would use the bank's telco partner, not Twilio.
 
-## 5. What to record for the 3-minute video
+## 5. What to record for the video (3 to 4 minutes, target 3:30)
 
 Record L1 (voiced replay) on a phone screen-recorder, with the fraud desk on a second recording, and cut:
 
@@ -100,7 +100,7 @@ Record L1 (voiced replay) on a phone screen-recorder, with the fraud desk on a s
 | 2:20-2:50 | Architecture slide, eval table, Live Q&A clip |
 | 2:50-2:58 | "Deployed on Cloud Run; Gemini 3.8 / 3.5, ADK 2.11; repo link" |
 
-Keep it under 3:00 by the rules; aim for 2:55.
+The final rules require 3 to 4 minutes, and a video that does not clearly show the working product does not progress. Aim for 3:30; export between 3:05 and 3:55. The shot list above is the early 2:58 cut; the current 3:30 timeline, with Talk to Rakshak, the family phone and the post-call carry-over, is in [submission/VIDEO_RECORDING_GUIDE.md](../submission/VIDEO_RECORDING_GUIDE.md).
 
 ## 6. Quota warning (learned the hard way on 10 Oct)
 

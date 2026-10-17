@@ -2,9 +2,11 @@
 
 **One line:** Pixel can hear the call, the telecom FRI knows the payee, the bank sees the payment; nothing joins them at the moment the money moves. Rakshak does, on the bank's side of the stack where the liability sits.
 
+**Team:** Prod Pilots (team leader: Lohith DS).
+
 ## 1. The 3-minute spoken pitch (word for word)
 
-Good afternoon. I am [name] from Team Rakshak, and this is a story about one tap.
+Good afternoon. I am Lohith DS, team leader of Prod Pilots, and this is a story about one tap.
 
 In Singapore last year, 81.8 percent of scam cases were self-effected transfers. The victim made the payment themselves. In India, cyber fraud cost at least 22,495 crore rupees in 2025, and about a quarter of it was recovered. Digital-arrest scams alone, where a caller pretends to be the CBI and keeps the victim on the line, ran to 1,935 crore across 123,672 cases in 2024.
 

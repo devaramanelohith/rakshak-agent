@@ -1,5 +1,10 @@
 // Shared audio, websocket, formatting and icon helpers for the Rakshak pages.
-const WS_BASE = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
+// Firebase Hosting (*.web.app / *.firebaseapp.com) rewrites HTTP to Cloud Run but does not proxy WebSockets,
+// so from those origins the sockets go straight to the Cloud Run service; HTTP calls stay relative.
+const CLOUD_RUN_HOST = 'rakshak-223197895518.asia-southeast1.run.app';
+const WS_BASE = /\.(web\.app|firebaseapp\.com)$/.test(location.hostname)
+  ? 'wss://' + CLOUD_RUN_HOST
+  : (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
 
 function b64ToInt16(b64) {
   const bin = atob(b64); const bytes = new Uint8Array(bin.length);

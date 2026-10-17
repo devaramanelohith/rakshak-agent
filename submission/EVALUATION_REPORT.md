@@ -128,7 +128,7 @@ The first run of this set reported payment-decision accuracy 0.974 (38 of 39); t
 | Fusion policy | under 100 ms | Pure arithmetic in the request; the case is stored with `latency_ms: 0` |
 | Hold event on the phone after Pay | 20 ms to 1.2 s | Measured on the public URL by `scripts/smoke_ws.py` (decision event timestamp minus the Pay request) |
 | Voice barge-in after the hold event | about 100 ms | When the clip was prewarmed (startup, pay-screen open, or replay start); otherwise after TTS synthesis of about 6 s, during which the hold screen is already up |
-| ADK agent decision | 11 to 17 s | `gemini-3.8-flash` at `thinking_level=low`, two agents, two to three tool calls; off the critical path |
+| ADK agent decision | 5.4 to 7.2 s (was 11 to 17 s on gemini-3.8-flash) | `gemini-3.5-flash` at `thinking_level=minimal` since 17 Oct after Vertex 429s on 3.8, two agents, two to three tool calls; off the critical path |
 
 The design consequence: the rubric is scheduled with a 1.2 s debounce and at least 3 s between calls so that a 2 to 3 s model never falls behind a conversation, and the payment decision does not wait for any model at all.
 

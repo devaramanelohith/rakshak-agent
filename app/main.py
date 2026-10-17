@@ -310,7 +310,7 @@ async def get_profile(user_id: str):
 
 @app.put("/api/profiles/{user_id}")
 async def put_profile(user_id: str, patch: dict):
-    return store().put_profile(user_id, patch)
+    return store().put_profile(user_id, patch, user_edit=True)
 
 
 @app.get("/api/payees")

@@ -246,7 +246,7 @@ li { margin-bottom: 14px; }
     <div class="arrow v" style="left:715px; top:510px; height:45px;"></div>
     <div class="alabel" style="left:727px; top:520px;">in parallel</div>
     <!-- row C: agents -->
-    <div class="box agent" style="left:30px; top:555px; width:815px; height:140px;"><b>ADK 2.11 SequentialAgent on gemini-3.5-flash (fallback gemini-3.8-flash)</b>risk_investigator: lookup_payee_risk, check_regulated_entity &rarr; decision_agent: place_payment_hold<br>final = max(agent, policy): confirms or upgrades, never relaxes. Lands 11 to 17 s after the fast path.</div>
+    <div class="box agent" style="left:30px; top:555px; width:815px; height:140px;"><b>ADK 2.11 SequentialAgent on gemini-3.5-flash (fallback gemini-3.8-flash)</b>risk_investigator: lookup_payee_risk, check_regulated_entity &rarr; decision_agent: place_payment_hold<br>final = max(agent, policy): confirms or upgrades, never relaxes. Lands about 6 s after the fast path.</div>
     <div class="arrow h" style="left:845px; top:625px; width:25px;"></div>
     <div class="box model" style="left:870px; top:555px; height:140px;"><b>Narrative gemini-3.5-flash</b>case record, evidence points, drafted 1930 / ASCom referral</div>
     <div class="arrow h" style="left:1125px; top:625px; width:25px;"></div>
@@ -295,7 +295,7 @@ li { margin-bottom: 14px; }
       </ul>
     </div>
     <div class="col">
-      <div class="callout green" style="margin-bottom:30px;"><b>Fast path first.</b> The deterministic policy acts in under 100 ms. The agent lands 11 to 17 s later with evidence and a trace.</div>
+      <div class="callout green" style="margin-bottom:30px;"><b>Fast path first.</b> The deterministic policy acts in under 100 ms. The agent lands about 6 s later with evidence and a trace.</div>
       <div class="callout red" style="margin-bottom:30px;"><b>Policy floor.</b> final = max(agent, policy). The agent confirms or upgrades, never relaxes a hold. A failed agent leaves the policy in force.</div>
       <div class="callout"><b>Human in the loop.</b> A hold is a pause: one-tap override with a typed amount, voice Q&amp;A, 30-minute expiry. Every step is on the case timeline.</div>
     </div>
@@ -412,7 +412,7 @@ li { margin-bottom: 14px; }
         <li>Kannada and Tamil voice not reviewed by native speakers</li>
         <li>Tier 1 on-device is a design, not code</li>
         <li>Prototype endpoints are open; single always-on instance for the demo</li>
-        <li>The agent's own decision lands 11 to 17 s after the fast path</li>
+        <li>The agent's own decision lands about 6 s after the fast path</li>
       </ul>
     </div>
     <div class="col">

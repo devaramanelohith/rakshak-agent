@@ -51,7 +51,7 @@
 <div class="toast toast--fixed" id="toast" role="status" aria-live="polite"></div>
 <script src="/static/common.js"></script>
 <script>
-const $ = (id) => document.getElementById(id); let CASES = [], SEL = null, FILTER = 'all'; const LIVE = {};
+const $ = (id) => document.getElementById(id); let CASES = [], SEL = qs('case') || null, FILTER = 'all'; const LIVE = {};
 [['brandIco', 'shield'], ['liveIco', 'wave'], ['sysIco', 'database']].forEach(([id, n]) => { $(id).innerHTML = icon(n); });
 // System footer: live models from /api/health and the moving ledger from /api/ledger/stats.
 async function refreshSystem() {

@@ -1,0 +1,9 @@
+{
+  "hosting": {
+    "public": "firebase/public",
+    "ignore": ["**/README.txt", "**/.*"],
+    "rewrites": [
+      { "source": "**", "run": { "serviceId": "rakshak", "region": "asia-southeast1" } }
+    ]
+  }
+}
