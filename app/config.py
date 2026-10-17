@@ -30,9 +30,9 @@ class Settings(BaseModel):
 
     # --- Models (verified against the Gemini API on 2026-10-10) ---------------
     model_rubric: str = Field(default_factory=lambda: os.getenv("RAKSHAK_MODEL_RUBRIC", "gemini-3.5-flash"))
-    model_agent: str = Field(default_factory=lambda: os.getenv("RAKSHAK_MODEL_AGENT", "gemini-3.8-flash"))
-    model_agent_fallback: str = Field(default_factory=lambda: os.getenv("RAKSHAK_MODEL_AGENT_FALLBACK", "gemini-3.5-flash"))
-    model_narrative: str = Field(default_factory=lambda: os.getenv("RAKSHAK_MODEL_NARRATIVE", "gemini-3.8-flash"))
+    model_agent: str = Field(default_factory=lambda: os.getenv("RAKSHAK_MODEL_AGENT", "gemini-3.5-flash"))
+    model_agent_fallback: str = Field(default_factory=lambda: os.getenv("RAKSHAK_MODEL_AGENT_FALLBACK", "gemini-3.8-flash"))
+    model_narrative: str = Field(default_factory=lambda: os.getenv("RAKSHAK_MODEL_NARRATIVE", "gemini-3.5-flash"))
     model_transcribe_live: str = Field(
         default_factory=lambda: os.getenv("RAKSHAK_MODEL_TRANSCRIBE_LIVE", "gemini-3.5-transcribe-live")
     )

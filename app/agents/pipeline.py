@@ -57,6 +57,9 @@ After the tool call, reply with one line: ACTION=<action> CONFIDENCE=<0-1>."""
 def build_agent(model: str | None = None) -> SequentialAgent:
     model = model or settings.model_agent
     llm = Gemini(model=model, client=genai_client())  # same client/credentials as the rest of the app (Vertex or AI Studio)
+    # gemini-3.5 accepts the fastest thinking level; gemini-3.8 rejects "minimal", so pick per model.
+    thinking = "minimal" if model.startswith("gemini-3.5") else settings.agent_thinking
+    cfg = types.GenerateContentConfig(thinking_config=types.ThinkingConfig(thinking_level=thinking))
     investigator = LlmAgent(
         name="risk_investigator",
         model=llm,
@@ -64,7 +67,7 @@ def build_agent(model: str | None = None) -> SequentialAgent:
         instruction=RISK_INSTRUCTION,
         tools=[tools.lookup_payee_risk, tools.check_regulated_entity],
         output_key="risk_findings",
-        generate_content_config=types.GenerateContentConfig(thinking_config=types.ThinkingConfig(thinking_level=settings.agent_thinking)),
+        generate_content_config=cfg,
     )
     decider = LlmAgent(
         name="decision_agent",
@@ -73,7 +76,7 @@ def build_agent(model: str | None = None) -> SequentialAgent:
         instruction=DECISION_INSTRUCTION,
         tools=[tools.place_payment_hold],
         output_key="decision_note",
-        generate_content_config=types.GenerateContentConfig(thinking_config=types.ThinkingConfig(thinking_level=settings.agent_thinking)),
+        generate_content_config=cfg,
     )
     return SequentialAgent(name="rakshak_payment_guardian", sub_agents=[investigator, decider])
 

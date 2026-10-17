@@ -246,9 +246,9 @@ li { margin-bottom: 14px; }
     <div class="arrow v" style="left:715px; top:510px; height:45px;"></div>
     <div class="alabel" style="left:727px; top:520px;">in parallel</div>
     <!-- row C: agents -->
-    <div class="box agent" style="left:30px; top:555px; width:815px; height:140px;"><b>ADK 2.11 SequentialAgent on gemini-3.8-flash (fallback gemini-3.5-flash)</b>risk_investigator: lookup_payee_risk, check_regulated_entity &rarr; decision_agent: place_payment_hold<br>final = max(agent, policy): confirms or upgrades, never relaxes. Lands 11 to 17 s after the fast path.</div>
+    <div class="box agent" style="left:30px; top:555px; width:815px; height:140px;"><b>ADK 2.11 SequentialAgent on gemini-3.5-flash (fallback gemini-3.8-flash)</b>risk_investigator: lookup_payee_risk, check_regulated_entity &rarr; decision_agent: place_payment_hold<br>final = max(agent, policy): confirms or upgrades, never relaxes. Lands 11 to 17 s after the fast path.</div>
     <div class="arrow h" style="left:845px; top:625px; width:25px;"></div>
-    <div class="box model" style="left:870px; top:555px; height:140px;"><b>Narrative gemini-3.8-flash</b>case record, evidence points, drafted 1930 / ASCom referral</div>
+    <div class="box model" style="left:870px; top:555px; height:140px;"><b>Narrative gemini-3.5-flash</b>case record, evidence points, drafted 1930 / ASCom referral</div>
     <div class="arrow h" style="left:1125px; top:625px; width:25px;"></div>
     <div class="box" style="left:1150px; top:555px; height:140px;"><b>Case store</b>cases, profiles, alerts, trace, timeline; Firestore or local JSON; read by /desk</div>
     <div class="arrow h" style="left:1405px; top:625px; width:35px;"></div>
@@ -266,7 +266,7 @@ li { margin-bottom: 14px; }
     <tr><th style="width:30%">Model or service</th><th style="width:30%">Where</th><th>Why</th></tr>
     <tr><td>gemini-3.5-transcribe-live</td><td>Live API, one session per speaker</td><td>Labelled caller/user turns without diarization</td></tr>
     <tr><td>gemini-3.5-flash</td><td>Coercion rubric, strict JSON schema</td><td>2.4 to 3 s with minimal thinking; clean Devanagari, Kannada, Tamil output</td></tr>
-    <tr><td>gemini-3.8-flash</td><td>ADK investigator and decision agents, narrative, Search grounding</td><td>Best tool use; latency is off the critical path</td></tr>
+    <tr><td>gemini-3.5-flash (minimal thinking); gemini-3.8-flash fallback</td><td>ADK investigator and decision agents, narrative, Search grounding</td><td>Best tool use; latency is off the critical path</td></tr>
     <tr><td>gemini-3.8-flash-tts</td><td>Voice barge-in and whisper, prewarmed per amount</td><td>Natural Hindi prosody; 100 ms when cached</td></tr>
     <tr><td>gemini-3.8-live</td><td>Post-hold voice conversation with function calling</td><td>Customer asks "why?" and hears the answer</td></tr>
     <tr><td>Google ADK 2.11</td><td>SequentialAgent, Runner, function tools</td><td>Traceable multi-agent decision with a policy floor</td></tr>
