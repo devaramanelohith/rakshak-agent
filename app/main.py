@@ -102,6 +102,12 @@ async def desk_page():
     return _page("desk.html")
 
 
+@app.get("/sw.js")
+async def service_worker():
+    # Must be served from the root so its scope covers the whole app.
+    return FileResponse(str(WEB / "sw.js"), media_type="application/javascript", headers={"Cache-Control": "no-cache", "Service-Worker-Allowed": "/"})
+
+
 @app.get("/call")
 async def caller_page():
     return _page("caller.html")

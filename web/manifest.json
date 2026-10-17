@@ -1,0 +1,25 @@
+{
+  "name": "SafePay with Rakshak",
+  "short_name": "SafePay",
+  "description": "Bank app with Rakshak, the scam-moment guardian: pauses risky payments during coercive calls.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0f17",
+  "theme_color": "#0b1f3a",
+  "lang": "en",
+  "categories": ["finance", "security"],
+  "icons": [
+    { "src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/static/icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/static/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Caller phone", "url": "/call", "description": "Ring the customer's phone for a live test" },
+    { "name": "Family alerts", "url": "/family", "description": "Trusted contact's alert feed" },
+    { "name": "Fraud desk", "url": "/desk", "description": "Bank-side cases and agent traces" }
+  ]
+}

@@ -63,6 +63,7 @@ async function init() {
   setLinks(); renderIdentity();
   const opts = S.scripts.map(s => `<option value="${s.id}">${esc(s.title)} (${s.language})</option>`).join('');
   $('scriptSel').innerHTML = opts; $('drillScriptSel').innerHTML = opts;
+  try { pickScriptForLanguage($('scriptSel'), S.scripts); pickScriptForLanguage($('drillScriptSel'), S.scripts); } catch (e) {}
   renderGuardianCard(); setListening(false);
   connectEvents();
   log(`session ${S.sid} ready for ${S.profile.name}`); clog('page_loaded', navigator.userAgent.slice(0, 80));
@@ -93,6 +94,11 @@ function setLinks() {
 }
 // Everything that shows the customer's name: greeting, customer switch label, document title.
 function renderBalance() { const el = $('balanceText'); if (!el) return; el.textContent = (S.profile && S.profile.language === 'en-sg') ? 'S$48,231' : '₹4,82,310'; }
+function pickScriptForLanguage(sel, scripts) {
+  const want = (S.profile && S.profile.language) || 'en';
+  const order = want === 'en-sg' ? ['en-sg', 'en'] : want === 'hinglish' ? ['hinglish', 'hi', 'en'] : want === 'hi' ? ['hi', 'hinglish', 'en'] : ['en', 'en-sg'];
+  for (const lang of order) { const s = scripts.find(x => x.language === lang && x.expected_outcome !== 'proceed'); if (s) { sel.value = s.id; return; } }
+}
 function renderIdentity() { renderBalance();
   const p = S.profile || {}; const name = p.name || S.userId;
   $('homeName').textContent = `${GREETING[p.language] || GREETING.en}, ${name}`;
@@ -549,3 +555,11 @@ $('userSel').onchange = () => { location.search = `?user=${$('userSel').value}`;
 $('btnCopySid').onclick = () => copyText(S.sid || '', $('btnCopySid'));
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if ($('confirmSheet').classList.contains('is-open')) closeSheet('confirmSheet'); } });
 init().catch(e => { log('init failed: ' + e.message); renderBootError(e); });
+
+
+// ---------- installable app ----------
+if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {})); }
+let _installEvt = null;
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); _installEvt = e; const b = $('btnInstall'); if (b) b.hidden = false; });
+window.addEventListener('appinstalled', () => { const b = $('btnInstall'); if (b) b.hidden = true; toast('SafePay installed on your home screen'); });
+if ($('btnInstall')) $('btnInstall').onclick = async () => { if (!_installEvt) return toast('Use your browser menu: Add to Home screen'); _installEvt.prompt(); await _installEvt.userChoice; _installEvt = null; };

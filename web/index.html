@@ -10,6 +10,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&display=swap">
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#0b1f3a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+<link rel="icon" href="/static/icons/icon-192.png">
 <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
@@ -56,6 +63,7 @@
             <div class="field"><label for="userSel">Customer</label>
               <select id="userSel"><option value="demo-user">Sunita Rao · 60+ · Hindi</option><option value="demo-user-en">Daniel Tan · 25-39 · English (Singapore)</option></select></div>
             <div class="eyebrow">Session code</div>
+            <button class="btn btn--primary btn--block" id="btnInstall" type="button" hidden>Install SafePay on this phone</button>
             <div class="session-code"><code id="sidText" class="num" aria-live="polite">…</code><button class="btn btn--secondary btn--sm" id="btnCopySid" type="button"><span id="icoCopy"></span>Copy</button></div>
             <div class="small muted">Enter this code on the caller phone to ring this device.</div>
             <div class="dev-links">

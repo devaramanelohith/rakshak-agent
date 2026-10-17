@@ -15,10 +15,10 @@ log = logging.getLogger("rakshak.store")
 DEFAULT_PROFILES: dict[str, dict[str, Any]] = {
     "demo-user": {
         "user_id": "demo-user",
-        "name": "Sunita Rao",
-        "age_band": "60+",
-        "language": "hi",
-        "trusted_contact_name": "Priya (daughter)",
+        "name": "Lohith",
+        "age_band": "25-39",
+        "language": "en",
+        "trusted_contact_name": "Priya (sister)",
         "trusted_contact_phone": "+91 98765 00007",
         "typical_transfer_inr": 4000,
         "guardian_enabled": True,

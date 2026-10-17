@@ -10,6 +10,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&display=swap">
+<link rel="manifest" href="/static/manifest-caller.json">
+<meta name="theme-color" content="#0b1f3a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+<link rel="icon" href="/static/icons/icon-192.png">
 <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
@@ -69,6 +76,7 @@
 <script src="/static/common.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
+function pickScriptByLang() { const list = C.scriptList || []; const lang = (C.profile && C.profile.language) || 'en'; const order = lang === 'en-sg' ? ['en-sg','en'] : lang === 'hi' ? ['hi','hinglish','en'] : lang === 'hinglish' ? ['hinglish','hi','en'] : ['en','en-sg']; for (const l of order) { const s = list.find(x => x.language === l && x.expected_outcome !== 'proceed'); if (s) { if ($('scriptSel').value !== s.id) { $('scriptSel').value = s.id; loadScript(); } return; } } }
 const C = { sid: null, callWS: null, evWS: null, mic: null, player: new Player(), muted: false, t0: null, timer: null, ringTimer: null, script: null, said: new Set(), state: 'idle', profile: null, loadSeq: 0 };
 const LANG_NAMES = { hi: 'Hindi', hinglish: 'Hinglish', en: 'English', 'en-sg': 'English (Singapore)', kn: 'Kannada', ta: 'Tamil' };
 const CALLING = { hi: 'कॉल कर रहे हैं', hinglish: 'Call kar rahe hain', en: 'Calling', 'en-sg': 'Calling', kn: 'ಕರೆ ಮಾಡಲಾಗುತ್ತಿದೆ', ta: 'அழைக்கிறது' };
@@ -94,7 +102,7 @@ function setButtons() {
 
 // ---------- customer identity (follows the selected customer, never hard-coded) ----------
 function renderCustomer(p) {
-  C.profile = p || null;
+  C.profile = p || null; try { pickScriptByLang(); } catch (e) {}
   if (!p) { $('avatar').textContent = '?'; $('target').textContent = 'SafePay customer'; $('targetSub').textContent = 'Enter a session code to see who you are calling'; return; }
   $('avatar').textContent = initials(p.name);
   $('target').textContent = p.name || 'SafePay customer';
@@ -122,7 +130,7 @@ async function loadScripts() {
   try {
     const list = await api('/api/scripts');
     $('scriptSel').innerHTML = list.map(s => `<option value="${s.id}">${esc(s.title)} (${s.language})</option>`).join('');
-    $('scriptSel').onchange = loadScript; if (list.length) await loadScript();
+    $('scriptSel').onchange = loadScript; C.scriptList = list; pickScriptByLang(); if (list.length) await loadScript();
   } catch (e) { $('lines').innerHTML = '<div class="small muted">Scripts unavailable.</div>'; }
 }
 async function loadScript() {
@@ -208,6 +216,7 @@ $('btnMute').onclick = () => { C.muted = !C.muted; setButtons(); if (C.callWS &&
 setButtons();
 if (qs('session')) { $('sessInp').value = qs('session'); loadCustomer(qs('session')); }
 loadScripts();
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(() => {}); }
 </script>
 </body>
 </html>

@@ -1,0 +1,17 @@
+{
+  "name": "Rakshak Caller",
+  "short_name": "Rakshak Caller",
+  "description": "The other party's phone for a live Rakshak call test.",
+  "id": "/call",
+  "start_url": "/call",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0f17",
+  "theme_color": "#0b1f3a",
+  "icons": [
+    { "src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/static/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

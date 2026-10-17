@@ -232,6 +232,10 @@ Details, DPDP Act and MAS considerations, and the production client path (Fireba
 * **Roadmap.** Real mule features from the bank ledger through `sql/payee_risk.sql`; move the ADK pipeline to Vertex AI Agent Runtime and customer profiles to Memory Bank; bidirectional Twilio stream so the barge-in reaches the phone call; native-speaker review of Kannada and Tamil; a bank pilot behind Firebase Auth and App Check.
 
 
+## Install as an app
+
+The customer app is an installable PWA (home-screen icon, full screen, microphone and live call keep working). Android: open the URL in Chrome and tap **Install**; iPhone: Share, **Add to Home Screen**. An APK/AAB for Android can be packaged from the same URL with PWABuilder in a few minutes. Steps: [docs/ANDROID_APP.md](docs/ANDROID_APP.md).
+
 ## Privacy tiers and data lineage
 
 Rakshak degrades gracefully with the customer's consent: Tier 0 uses only call state and payee risk, Tier 1 keeps an on-device transcript that never leaves the phone until a payment is attempted, Tier 2 (this prototype) analyses audio in the cloud through lawful channels (in-app calls, telco partner, OS vendor). Payee features are computed from a ledger stream with the same formula as `sql/payee_risk.sql`, and every payee card carries a lineage record. Full design: [docs/PRIVACY_TIERS.md](docs/PRIVACY_TIERS.md). Ledger endpoints: `GET /api/ledger/stats`, `GET /api/ledger/recent?vpa=...`.
