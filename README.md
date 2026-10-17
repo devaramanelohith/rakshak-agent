@@ -93,11 +93,15 @@ Two things to know before a rehearsal: the free AI Studio tier has small daily r
 
 ## How to test it as a judge
 
+**60-second self-test on the deployed service** (no install): open https://rakshak-223197895518.asia-southeast1.run.app/?session=judge&user=demo-user on a phone or laptop, finish the three onboarding taps, tap **Test an incoming call**, choose **Parcel from Taiwan** and **Auto-play script**, watch the transcript and risk gauge, and when the toast says the caller is demanding payment tap **Open UPI pay** then **Pay**. You will see the hold, hear Rakshak in Hindi, and find the case with the agent trace at https://rakshak-223197895518.asia-southeast1.run.app/desk.
+
+**Live two-phone call** (the stage demo): phone A opens `/?session=judge2&user=demo-user`; phone B opens `/call?session=judge2`, checks the pill says "customer's phone: open", and taps **Call**. Phone A rings; tap **Answer** and allow the microphone on both. Talk; phone B plays a scammer (or taps "Say" lines in the prompter). Pay from phone A when asked. A third phone on `/family?user=demo-user` receives the trusted-contact alert.
+
 Two demo customers exist: `demo-user` (Sunita Rao, 60+, Hindi, trusted contact Priya, typical transfer Rs 4,000) and `demo-user-en` (Daniel Tan, Singapore English, trusted contact Mei). Switch with the dropdown on the home screen. Every payee handle ends in `@rakshakdemo`, a suffix that does not exist on UPI.
 
 ### Flow 1: scripted scam call, then pay (the main demo)
 
-1. Open `/`, tap **Simulate incoming call**.
+1. Open `/`, tap **Test an incoming call**.
 2. Pick **Parcel from Taiwan (CBI digital arrest, Hindi)** and tap **Auto-play script**. The scammer's lines are voiced on the phone (Charon voice), transcribed, and the risk meter, signal chips and Hindi reasons update after each utterance. At risk >= 0.85 a private whisper plays on the victim's device only ("Rakshak: careful...").
 3. The replay stops at the `payment_demand` line and shows a toast. Tap **Open UPI pay**: the VPA `cbi.verification@rakshakdemo` and Rs 2,50,000 are pre-filled (if the pay screen was already open, the fields fill in when the demand line is reached). Tap **Pay**.
 4. Expect, immediately: the hold screen with a 30:00 countdown, the payee card (critical band, 12 payers in 48 h, 96% cashed out in 7 days, 4 complaints on 1930), and "Priya (daughter) has been notified"; the screen changes first and Rakshak's Hindi voice follows over the ducked caller audio (instantly when the clip was prewarmed, otherwise as soon as TTS returns). Within a few seconds the event log shows the ADK agent confirming (`decided_by adk_agent`).
@@ -129,7 +133,7 @@ The `/api/payments` call waits up to `RAKSHAK_AGENT_SYNC_WAIT_S` (6 s) for the A
 
 ## Evaluation
 
-`scripts/eval.py` scores the rubric and the fusion policy on `data/eval/calls.json`: 30 labelled calls (15 scam, 15 benign; Hindi, Hinglish, English and Singapore English; 21 include a payment attempt). It measures call-level precision, recall and F1 at the hold threshold (0.70), per-signal accuracy over the 8 signals, payment-decision accuracy of the fusion policy against the labels, and mean rubric latency. It writes `data/runtime/eval_results.json` (served at `/api/eval/latest`) and regenerates `docs/EVAL_RESULTS.md`.
+`scripts/eval.py` scores the rubric and the fusion policy on `data/eval/calls.json`: 50 labelled calls (25 scam, 25 benign; Hindi, Hinglish, English, Singapore English, Kannada and Tamil; 39 include a payment attempt; 10 are legitimate-but-urgent hard negatives and 10 are adversarial scams that avoid the obvious words). It measures call-level precision, recall and F1 at the hold threshold (0.70), per-signal accuracy over the 8 signals, payment-decision accuracy of the fusion policy against the labels, and mean rubric latency. It writes `data/runtime/eval_results.json` (served at `/api/eval/latest`) and regenerates `docs/EVAL_RESULTS.md`.
 
 ```bash
 uv run python scripts/eval.py            # with Gemini
@@ -142,7 +146,7 @@ See [docs/EVAL_RESULTS.md](docs/EVAL_RESULTS.md) for the numbers of the latest r
 ## Demo modes
 
 1. **Replay (one device).** `POST /api/sessions/{id}/replay` plays one of the 12 scripts in `data/scripts/demo_scripts.json` (9 scam, 3 benign; Hindi, Hinglish, English, Singapore English). Caller lines are voiced with the caller TTS voice and transcribed; the user's lines are injected as text so the rubric sees both sides. Replay stops at the `payment_demand` marker by default.
-2. **In-app two-device call.** The victim opens `/`, the second person opens `/scammer?session=<id>` on another device or tab and taps **Start my mic**. Audio is relayed between the two browsers (a tiny VoIP) and each leg is transcribed by its own Live session, so the transcript is labelled without diarization. The scammer can also type a line (voiced on the victim's phone) or click lines from a script.
+2. **In-app two-device call.** The customer opens `/?session=<code>`, the other party opens `/call?session=<code>` (a phone-style caller page) and taps **Call**; the customer's phone rings and answers. Audio is relayed between the two browsers (a tiny VoIP) and each leg is transcribed by its own Live session, so the transcript is labelled without diarization. The caller page shows whether the customer's phone is on the same code, re-rings until answered, and has a script prompter with "Say" buttons. `/scammer` remains as an operator console for recordings.
 3. **Real phone number via Twilio.** Point a Twilio number's Voice webhook at `POST https://<url>/twilio/voice?session=phone`. Twilio announces "Rakshak guardian mode is on for this call", dials `TWILIO_DIAL_NUMBER` (the "scammer" phone) and forks both tracks as 8 kHz mu-law to `/ws/twilio/phone`; the bridge resamples to 16 kHz and feeds the same transcribers. Open `/?session=phone` to watch the risk meter and pay. This is the telco-side deployment shape. Note that the hold voice plays on the app device, not into the PSTN call.
 
 The demo run-book (the four demo layers L0 to L3, the Singapore stage script, what to record for the video, and the quota warning) is [docs/DEMO_STRATEGY.md](docs/DEMO_STRATEGY.md); the day-by-day plan to the 18 October deadline is [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md).
